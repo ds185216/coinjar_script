@@ -1,0 +1,1 @@
+[{"refresh": 3, "invest": "1000.00", "def_percent": 99, "token": "XXXXXX"}]
