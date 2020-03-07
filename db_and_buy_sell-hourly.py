@@ -155,7 +155,7 @@ def write_daily(token_entry):
 #Buy_sell part
 
 # work on all currencies with the sell patterns for when final_cur has changed to something else
-	with open('holder', 'rb') as handle:
+	with open('holder-hourly', 'rb') as handle:
 		holder_cur = pickle.load(handle)
 		holder_ema = pickle.load(handle)
 	buy_prices = [y for y in db_buy[final_cur]]
@@ -174,7 +174,7 @@ def write_daily(token_entry):
 			if calc_ema(final_ema[0], buy_prices[-1], buy_prices[-1-(final_ema[0])]) < float(buy_prices[-1]):
 				if float(accounts[0]['available']) > 0:
 					buy_sell_product("buy", final_cur, round(float(buy_prices[-1]), 2), (float(accounts[0]['available'])/float(buy_prices[-1])))
-					with open('holder', 'wb') as handle:
+					with open('holder-hourly', 'wb') as handle:
 						pickle.dump(final_cur, handle)
 						pickle.dump(final_ema[1], handle)
 
