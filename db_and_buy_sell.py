@@ -49,28 +49,45 @@ if token == "":
 headers = {'Content-Type': 'application/json; charset=utf-8', 'Authorization': 'Token token=%s' % token}
 
 def buy_sell_product(BUY_SELL, W, X, Y):
-	global today
 	values = {"product_id": W, "type": "LMT", "side": BUY_SELL, "price": str(X), "size": str(Y), "time_in_force": "GTC"}
 	r = requests.post('https://api.exchange.coinjar.com/orders', data=json.dumps(values), headers=headers)
 	if r.status_code == 200:
 		print("Transaction OK")
-		today = True
 	else:
 		print("Some bogus error", r.reason)
 		print(values)
 
 def write_daily(token_entry):
 	global headers
-	products = json.loads(urlopen(Request('https://api.exchange.coinjar.com/products', headers=headers)).read().decode('utf-8'))
-	product_list = [i['id'] for i in products]
-	buy_price = []
-	sell_price = []
-	for i in product_list:
-		url = "https://data.exchange.coinjar.com/products/%s/ticker" % i
-		b = json.loads(urlopen(Request(url)).read().decode('utf-8'))
-		buy_price.append(b['ask'])
-		sell_price.append(b['bid'])
-
+	try:
+		products = json.loads(urlopen(Request('https://api.exchange.coinjar.com/products', headers=headers)).read().decode('utf-8'))
+		product_list = [i['id'] for i in products]
+	except:
+		db_buy = pd.read_pickle('db_buy')
+		product_list = [x for x in db_buy]
+	
+	retries = 0
+	success = False
+	while not success:
+		try:
+			buy_price = []
+			sell_price = []
+			for i in product_list:
+				url = "https://data.exchange.coinjar.com/products/%s/ticker" % i
+				b = json.loads(urlopen(Request(url)).read().decode('utf-8'))
+				buy_price.append(b['ask'])
+				sell_price.append(b['bid'])
+			success = True
+		except:
+			print ('Timeout error, attempt:', retries)
+			time.sleep(5)
+			retries +=1
+			if retries == 30:
+				db_buy = pd.read_pickle('db_buy')
+				db_sell = pd.read_pickle('db_sell')
+				buy_price = [x for x in db_buy.iloc[-1]]
+				sell_price = [x for x in db_sell.iloc[-1]]
+				success = True
 	try:
 		db_buy = pd.read_pickle('db_buy')
 		db_sell = pd.read_pickle('db_sell')
