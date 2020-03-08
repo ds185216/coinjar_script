@@ -155,9 +155,13 @@ def write_daily(token_entry):
 #Buy_sell part
 
 # work on all currencies with the sell patterns for when final_cur has changed to something else
-	with open('holder-hourly', 'rb') as handle:
-		holder_cur = pickle.load(handle)
-		holder_ema = pickle.load(handle)
+	try:
+		with open('holder-hourly', 'rb') as handle:
+			holder_cur = pickle.load(handle)
+			holder_ema = pickle.load(handle)
+	except:
+		holder_cur = final_cur
+		holder_ema = final_ema[1]
 	buy_prices = [y for y in db_buy[final_cur]]
 	sell_prices = [y for y in db_sell[holder_cur]]
 	accounts = json.loads(urlopen(Request('https://api.exchange.coinjar.com/accounts', headers=headers)).read().decode('utf-8'))
