@@ -59,12 +59,12 @@ def buy_sell_product(BUY_SELL, W, X, Y):
 
 def write_daily(token_entry):
 	global headers
-		try:
-			products = json.loads(urlopen(Request('https://api.exchange.coinjar.com/products', headers=headers)).read().decode('utf-8'))
-			product_list = [i['id'] for i in products]
-		except:
-			db_buy = pd.read_pickle('db_buy')
-			product_list = [x for x in db_buy]
+	try:
+		products = json.loads(urlopen(Request('https://api.exchange.coinjar.com/products', headers=headers)).read().decode('utf-8'))
+		product_list = [i['id'] for i in products]
+	except:
+		db_buy = pd.read_pickle('db_buy')
+		product_list = [x for x in db_buy]
 	
 	retries = 0
 	success = False
