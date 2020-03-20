@@ -174,7 +174,7 @@ def write_daily(token_entry):
 			if float(accounts[ASSET]['available']) > 0:
 				buy_sell_product("sell", holder_cur, sell_prices[-1], accounts[ASSET]['available'])
 				today = True
-		if today != True or holder_cur != final_cur:
+		if today != True:
 			if calc_ema(final_ema[0], buy_prices[-1], buy_prices[-1-(final_ema[0])]) < float(buy_prices[-1]):
 				if float(accounts[0]['available']) > 0:
 					buy_sell_product("buy", final_cur, round(float(buy_prices[-1]), 2), (float(accounts[0]['available'])/float(buy_prices[-1])))
