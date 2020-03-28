@@ -108,7 +108,7 @@ def write_daily(token_entry):
 		db_sell = pd.DataFrame(buy_price).transpose()
 		db_sell.columns = product_list
 		db_sell.rename(index={0 : str(datetime.datetime.now())}, inplace=True)
-	print (db_buy)
+
 	db_buy.to_pickle('db_buy-hourly')
 	db_sell.to_pickle('db_sell-hourly')
 
@@ -117,8 +117,10 @@ def write_daily(token_entry):
 		final_cur = pickle.load(handle)
 		final_ema = pickle.load(handle)
 
+	print (db_buy[final_cur])
+
 	buy_prices = [y for y in db_buy[final_cur]]
-	sell_prices = [y for y in db_sell[holder_cur]]
+	sell_prices = [y for y in db_sell[final_cur]]
 	accounts = json.loads(urlopen(Request('https://api.exchange.coinjar.com/accounts', headers=headers)).read().decode('utf-8'))
 	today = False
 	if len(db_buy) > 1000:

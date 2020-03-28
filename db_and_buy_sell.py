@@ -120,7 +120,7 @@ def write_daily(token_entry):
 	print (db_buy[final_cur])
 
 	buy_prices = [y for y in db_buy[final_cur]]
-	sell_prices = [y for y in db_sell[holder_cur]]
+	sell_prices = [y for y in db_sell[final_cur]]
 	accounts = json.loads(urlopen(Request('https://api.exchange.coinjar.com/accounts', headers=headers)).read().decode('utf-8'))
 	today = False
 	if calc_ema(holder_ema, round(float(sell_prices[-1]), 2), sell_prices[-1-(holder_ema)]) > float(sell_prices[-1]):
