@@ -88,7 +88,6 @@ def write_daily(token_entry):
 				buy_price = [x for x in db_buy.iloc[-1]]
 				sell_price = [x for x in db_sell.iloc[-1]]
 				success = True
-
 	try:
 		db_buy = pd.read_pickle('db_buy-hourly')
 		db_sell = pd.read_pickle('db_sell-hourly')
@@ -96,12 +95,12 @@ def write_daily(token_entry):
 		new_row = pd.DataFrame(buy_price).transpose()
 		new_row.columns = product_list
 		new_row.rename(index={0 : str(datetime.datetime.now())}, inplace=True)
-		db_buy = db_buy.append(new_row)
+		db_buy = db_buy.append(new_row, sort=True)
 
 		new_row = pd.DataFrame(sell_price).transpose()
 		new_row.columns = product_list
 		new_row.rename(index={0 : str(datetime.datetime.now())}, inplace=True)
-		db_sell = db_sell.append(new_row)
+		db_sell = db_sell.append(new_row, sort=True)
 	except:
 		db_buy = pd.DataFrame(buy_price).transpose()
 		db_buy.columns = product_list
@@ -113,60 +112,16 @@ def write_daily(token_entry):
 	db_buy.to_pickle('db_buy-hourly')
 	db_sell.to_pickle('db_sell-hourly')
 
-#test to find ema periods and best currency to work with
+#buy sell part
+	with open('holder-hourly', 'rb') as handle:
+		final_cur = pickle.load(handle)
+		final_ema = pickle.load(handle)
 
-	ema_range = list(itertools.product(range(2, 360), repeat=2))
-	currencies = [i for i in db_buy.columns if 'AUD' in i]
-	final_ema = [0,0]
-	final_cash = 0
-	final_cur = ""
-
-	for CUR in currencies:
-		buy_prices = [y for y in db_buy[CUR]]
-		sell_prices = [y for y in db_sell[CUR]]
-		for test_EMA in ema_range:
-			cash = 1000.00
-			BTC = 0
-			for i in range(len(buy_prices)):
-				today = False
-				if i >= test_EMA[1]:
-					if calc_ema(test_EMA[1], sell_prices[i], sell_prices[i-(test_EMA[1])]) > float(sell_prices[i]):
-						#test sell
-						cash = cash + round(BTC * float(sell_prices[i]))
-						BTC= 0
-						today = True
-				if i >= test_EMA[0] and today != True:
-					if calc_ema(test_EMA[0], buy_prices[i], buy_prices[i-(test_EMA[0])]) < float(buy_prices[i]):
-						#test buy
-						BTC = BTC + (round(cash) / float(buy_prices[i]))
-						cash = 0
-						#cash = cash - round(cash * 1)
-
-			if BTC != 0:
-				cash = cash + round(BTC * float(sell_prices[i]))
-				BTC= 0
-			if cash > final_cash:
-				final_cash = cash
-				final_ema = test_EMA
-				final_cur = CUR
-
-#_______________________________________________________________________
-
-#Buy_sell part
-
-# work on all currencies with the sell patterns for when final_cur has changed to something else
-	try:
-		with open('holder-hourly', 'rb') as handle:
-			holder_cur = pickle.load(handle)
-			holder_ema = pickle.load(handle)
-	except:
-		holder_cur = final_cur
-		holder_ema = final_ema[1]
 	buy_prices = [y for y in db_buy[final_cur]]
 	sell_prices = [y for y in db_sell[holder_cur]]
 	accounts = json.loads(urlopen(Request('https://api.exchange.coinjar.com/accounts', headers=headers)).read().decode('utf-8'))
 	today = False
-	if len(db_buy) > 360:
+	if len(db_buy) > 1000:
 		if calc_ema(holder_ema, round(float(sell_prices[-1]), 2), sell_prices[-1-(holder_ema)]) > float(sell_prices[-1]):
 			for X in range(len(accounts)):
 				if accounts[X]['asset_code'] != 'AUD' and accounts[X]['asset_code'] in holder_cur:
@@ -178,9 +133,6 @@ def write_daily(token_entry):
 			if calc_ema(final_ema[0], buy_prices[-1], buy_prices[-1-(final_ema[0])]) < float(buy_prices[-1]):
 				if float(accounts[0]['available']) > 0:
 					buy_sell_product("buy", final_cur, round(float(buy_prices[-1]), 2), (float(accounts[0]['available'])/float(buy_prices[-1])))
-					with open('holder-hourly', 'wb') as handle:
-						pickle.dump(final_cur, handle)
-						pickle.dump(final_ema[1], handle)
 
 #_________________________________________________________________________
 schedule.every().hour.at(":00").do(write_daily, token)
