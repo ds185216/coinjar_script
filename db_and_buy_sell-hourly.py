@@ -124,7 +124,7 @@ def write_daily(token_entry):
 	accounts = json.loads(urlopen(Request('https://api.exchange.coinjar.com/accounts', headers=headers)).read().decode('utf-8'))
 	today = False
 	if len(db_buy) > 1000:
-		if calc_ema(final_ema, round(float(sell_prices[-1]), 2), sell_prices[-1-(holder_ema)]) > float(sell_prices[-1]):
+		if calc_ema(final_ema[1], round(float(sell_prices[-1]), 2), sell_prices[-1-(final_ema[1])]) > float(sell_prices[-1]):
 			for X in range(len(accounts)):
 				if accounts[X]['asset_code'] != 'AUD' and accounts[X]['asset_code'] in holder_cur:
 					ASSET = X
