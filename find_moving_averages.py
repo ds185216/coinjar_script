@@ -23,9 +23,7 @@ def calc_hma(num, _data):
 	sqrt_length = int(math.sqrt(num))
 	new_list = []
 	for i in range(1, sqrt_length+1):
-		wma1 = calc_wma(half_length, _data[-(i+half_length):-i])
-		wma2 = calc_wma(num, _data[-(i+num):-i])
-		new_list.append(2 * wma1 - wma2)
+		new_list.append(2 * calc_wma(half_length, _data[-(i+half_length):-i]) - calc_wma(num, _data[-(i+num):-i]))
 	return calc_wma(sqrt_length, new_list)
 
 db_buy = pd.read_pickle('db_buy-hourly')

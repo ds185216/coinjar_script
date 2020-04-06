@@ -11,43 +11,31 @@ import itertools
 from itertools import *
 import math
 
-def calc_ema(num, today, yesterday):
-	k = 2/(num+1)
-	EMA = float(today)*k+float(yesterday)*(1-k)
-	return EMA
+from find_moving_averages import calc_ema, calc_wma, calc_hma
 
-def calc_wma(num, data):
-	first_sum = 0
-	for i in range(1, num+1):
-		first_sum = first_sum + (float(data[-i]) * i)
-	return first_sum/sum(range(1, num+1))
+""" To Do list:
+Implement stop feature once value crashes say 10% after buying
+Add count of transactions so a minimum number is required, rather than the chance of one transaction made
+Find if any value in periods, instead of hourly, make it 24h, and as of certain time 16:00 etc. is of best value
+Implement minimum buy amount to stop errors from showing
 
-def calc_hma(num, _data):
-	half_length = int(num/2)
-	sqrt_length = int(math.sqrt(num))
-	new_list = []
-	for i in range(1, sqrt_length+1):
-		wma1 = calc_wma(half_length, _data[-(i+half_length):-i])
-		wma2 = calc_wma(num, _data[-(i+num):-i])
-		new_list.append(2 * wma1 - wma2)
-	return calc_wma(sqrt_length, new_list)
+Throw in more formulas
+"""
 
 def readsettings():
 	global refresh, invest, def_percent, token
 	with open('cjsettings.txt') as json_file:  
 		data = json.load(json_file)[0]
-		refresh = data['refresh']
-		invest = data['invest']
-		def_percent = data['def_percent']
+		sell_stop = data['sell_stop']
+		stop_percent = data['stop_percent']
 		token = data['token']
 
 def writesettings():
 	data = []
 	data.append({
-		'refresh':refresh,
-		'invest':invest,
-		'def_percent':def_percent,
-		'token':token
+		'sell_stop' : 'on',
+		'stop_percent' : 10,
+		'token': 'xxxx'
 		})
 	with open('cjsettings.txt', 'w') as outfile:  
 		json.dump(data, outfile)
@@ -147,7 +135,7 @@ def write_daily(token_entry):
 		elif final_formula == 'WMA':
 			average = calc_wma(final_ma[1], sell_prices[-(final_ma[1]):-1]) 
 		
-		if average > float(sell_prices[-1]) or reverse == True and average < float(sell_prices[-1]):
+		if average > float(sell_prices[-1]) or reverse == True and average < float(sell_prices[-1]) or sell_stop == 'on' and stop_value <= float(sell_prices[-1]):
 			for X in range(len(accounts)):
 				if accounts[X]['asset_code'] != 'AUD' and accounts[X]['asset_code'] in final_cur:
 					ASSET = X
@@ -167,8 +155,17 @@ def write_daily(token_entry):
 			if average < float(buy_prices[-1]) or reverse == True and average > float(buy_prices[-1]):
 				if float(accounts[0]['available']) > 0:
 					buy_sell_product("buy", final_cur, round(float(buy_prices[-1]), 2), (float(accounts[0]['available'])/float(buy_prices[-1])))
+					stop_value = ((100-sell_percent)/100)*float(sell_prices[-1])
+					with open('invested', 'wb') as handle:
+						pickle.dump(stop_value, handle)
 
 #_________________________________________________________________________
+if sell_stop == 'on':
+	try:
+		with open('invested', 'wb') as handle:
+			stop_value = pickle.load(handle)
+	except:
+		stop_value = 1000000
 schedule.every().hour.at(":00").do(write_daily, token)
 while True:
 	schedule.run_pending()
