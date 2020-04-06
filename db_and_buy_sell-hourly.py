@@ -11,8 +11,6 @@ import itertools
 from itertools import *
 import math
 
-from find_moving_averages import calc_ema, calc_wma, calc_hma
-
 """ To Do list:
 find-moving-average:
 Add count of transactions so a minimum number is required, rather than the chance of one transaction made
@@ -23,6 +21,25 @@ Implement minimum buy amount to stop errors due to insufficient funds
 
 Throw in more formulas
 """
+
+def calc_ema(num, today, yesterday):
+	k = 2/(num+1)
+	EMA = float(today)*k+float(yesterday)*(1-k)
+	return EMA
+
+def calc_wma(num, data):
+	first_sum = 0
+	for i in range(1, num+1):
+		first_sum = first_sum + (float(data[-i]) * i)
+	return first_sum/sum(range(1, num+1))
+
+def calc_hma(num, _data):
+	half_length = int(num/2)
+	sqrt_length = int(math.sqrt(num))
+	new_list = []
+	for i in range(1, sqrt_length+1):
+		new_list.append(2 * calc_wma(half_length, _data[-(i+half_length):-i]) - calc_wma(num, _data[-(i+num):-i]))
+	return calc_wma(sqrt_length, new_list)
 
 def readsettings():
 	global minimum_periods, sell_stop, stop_percent, token
@@ -70,6 +87,8 @@ def buy_sell_product(BUY_SELL, W, X, Y):
 		print("Some bogus error", r.reason)
 		print(values)
 
+#Need to move this somewhere else as it needs a minumum value of db entries
+#Ill fix it later, im tired
 try:
 	global final_formula, final_cur, final_ma, reverse
 	with open('moving-averages-hourly', 'rb') as handle:
@@ -80,6 +99,7 @@ try:
 except:
 	print ('Please run find-moving-averages first!')
 	exit()
+#--------------------------------------
 
 def write_daily(token_entry):
 	global headers
@@ -135,7 +155,7 @@ def write_daily(token_entry):
 
 	db_buy.to_pickle('db_buy-hourly')
 	db_sell.to_pickle('db_sell-hourly')
-	print (db_buy[final_cur])
+	print (final_cur, db_buy[final_cur][-1])
 
 #buy sell part
 	buy_prices = [y for y in db_buy[final_cur]]
