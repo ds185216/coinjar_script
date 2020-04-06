@@ -14,11 +14,8 @@ def calc_ema(num, today, yesterday):
 
 def calc_wma(num, data):
 	first_sum = 0
-	#second_sum = 0
 	for i in range(1, num+1):
 		first_sum = first_sum + (float(data[-i]) * i)
-		#second_sum = second_sum + i
-	#return first_sum/second_sum
 	return first_sum/sum(range(1, num+1))
 
 def calc_hma(num, _data):
@@ -53,31 +50,30 @@ for reverse in [True, False]:
 		sell_prices = [y for y in db_sell[CUR]]
 		for test_EMA in ema_range:
 			cash = 1000.00
-			CRYPTO = 0
+			crypto = 0
 			for i in range(len(buy_prices)):
 				today = False
 				if i >= test_EMA[1]:
 					average = calc_ema(test_EMA[1], sell_prices[i], sell_prices[i-(test_EMA[1])])
 					if average > float(sell_prices[i]) or reverse == True and average < float(sell_prices[i]):
 						#test sell
-						cash = cash + round(CRYPTO * float(sell_prices[i]))
-						CRYPTO= 0
+						cash = cash + round(crypto * float(sell_prices[i]))
+						crypto= 0
 						today = True
 				if i >= test_EMA[0] and today != True:
 					average = calc_ema(test_EMA[0], buy_prices[i], buy_prices[i-(test_EMA[0])])
 					if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]):
 						#test buy
-						CRYPTO = CRYPTO + (round(cash) / float(buy_prices[i]))
+						crypto = crypto + (round(cash) / float(buy_prices[i]))
 						cash = 0
-			if CRYPTO != 0:
-				cash = cash + round(CRYPTO * float(sell_prices[i]))
-				CRYPTO= 0
+			if crypto != 0:
+				cash = cash + round(crypto * float(sell_prices[i]))
 			if cash > final_cash:
 				final_cash = cash
 				final_ema = test_EMA
 				final_cur = CUR
 				final_reverse = reverse
-print ('EMA',final_cur, final_ema, (final_cash-1000)/(len(db_buy)/24), final_reverse)
+print ('EMA',final_cur, final_ema, final_cash-1000)/(len(db_buy), final_reverse)
 if final_cash > overall_cash:
 	overall_cash = final_cash
 	overall_formula = 'EMA'
@@ -97,31 +93,30 @@ for reverse in [True, False]:
 		sell_prices = [y for y in db_sell[CUR]]
 		for test_wma in wma_range:
 			cash = 1000.00
-			CRYPTO = 0
+			crypto = 0
 			for i in range(len(buy_prices)):
 				today = False
 				if i >= test_wma[1]:
 					average = calc_wma(test_wma[1], sell_prices[i-test_wma[1]:i])
 					if average > float(sell_prices[i]) or reverse == True and average < float(sell_prices[i]):
 						#test sell
-						cash = cash + round(CRYPTO * float(sell_prices[i]))
-						CRYPTO= 0
+						cash = cash + round(crypto * float(sell_prices[i]))
+						crypto= 0
 						today = True
 				if i >= test_wma[0] and today != True:
 					average = calc_wma(test_wma[0], buy_prices[i-test_wma[0]:i])
 					if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]):
 						#test buy
-						CRYPTO = CRYPTO + (round(cash) / float(buy_prices[i]))
+						crypto = crypto + (round(cash) / float(buy_prices[i]))
 						cash = 0
-			if CRYPTO != 0:
-				cash = cash + round(CRYPTO * float(sell_prices[i]))
-				CRYPTO= 0
+			if crypto != 0:
+				cash = cash + round(crypto * float(sell_prices[i]))
 			if cash > final_cash:
 				final_cash = cash
 				final_wma = test_wma
 				final_cur = CUR
 				final_reverse = reverse
-print ('WMA',final_cur, final_wma, (final_cash-1000)/(len(db_buy)/24), final_reverse)
+print ('WMA',final_cur, final_wma, final_cash-1000)/(len(db_buy), final_reverse)
 if final_cash > overall_cash:
 	overall_cash = final_cash
 	overall_formula = 'WMA'
@@ -141,31 +136,30 @@ for reverse in [True, False]:
 		sell_prices = [y for y in db_sell[CUR]]
 		for test_hma in hma_range:
 			cash = 1000.00
-			CRYPTO = 0
+			crypto = 0
 			for i in range(len(buy_prices)):
 				today = False
 				if i >= (test_hma[1]+math.sqrt(test_hma[1])):
 					average = calc_hma(test_hma[1], sell_prices[(i-(test_hma[1]+int(math.sqrt(test_hma[1])))):i])
 					if average > float(sell_prices[i]) or reverse == True and average < float(sell_prices[i]):
 						#test sell
-						cash = cash + round(CRYPTO * float(sell_prices[i]))
-						CRYPTO= 0
+						cash = cash + round(crypto * float(sell_prices[i]))
+						crypto= 0
 						today = True
 				if i >= (test_hma[0]+math.sqrt(test_hma[0])) and today != True:
 					average = calc_hma(test_hma[0], buy_prices[(i-(test_hma[0]+int(math.sqrt(test_hma[0])))):i])
 					if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]):
 						#test buy
-						CRYPTO = CRYPTO + (round(cash) / float(buy_prices[i]))
+						crypto = crypto + (round(cash) / float(buy_prices[i]))
 						cash = 0
-			if CRYPTO != 0:
-				cash = cash + round(CRYPTO * float(sell_prices[i]))
-				CRYPTO= 0
+			if crypto != 0:
+				cash = cash + round(crypto * float(sell_prices[i]))
 			if cash > final_cash:
 				final_cash = cash
 				final_hma = test_hma
 				final_cur = CUR
 				final_reverse = reverse
-print ('HMA',final_cur, final_hma, (final_cash-1000)/(len(db_buy)/24), final_reverse)
+print ('HMA',final_cur, final_hma, final_cash-1000)/(len(db_buy), final_reverse)
 if final_cash > overall_cash:
 	overall_cash = final_cash
 	overall_formula = 'HMA'
