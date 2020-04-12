@@ -72,7 +72,7 @@ def find_averages():
 					final_ema = test_EMA
 					final_cur = CUR
 					final_reverse = reverse
-	print ('EMA',final_cur, final_ema, final_cash-1000)/(len(db_buy), final_reverse)
+	print ('EMA',final_cur, final_ema, (final_cash-1000)/len(db_buy), final_reverse)
 	if final_cash > overall_cash:
 		overall_cash = final_cash
 		overall_formula = 'EMA'
@@ -115,7 +115,7 @@ def find_averages():
 					final_wma = test_wma
 					final_cur = CUR
 					final_reverse = reverse
-	print ('WMA',final_cur, final_wma, final_cash-1000)/(len(db_buy), final_reverse)
+	print ('WMA',final_cur, final_wma, (final_cash-1000)/len(db_buy), final_reverse)
 	if final_cash > overall_cash:
 		overall_cash = final_cash
 		overall_formula = 'WMA'
@@ -158,7 +158,7 @@ def find_averages():
 					final_hma = test_hma
 					final_cur = CUR
 					final_reverse = reverse
-	print ('HMA',final_cur, final_hma, final_cash-1000)/(len(db_buy), final_reverse)
+	print ('HMA',final_cur, final_hma, (final_cash-1000)/len(db_buy), final_reverse)
 	if final_cash > overall_cash:
 		overall_cash = final_cash
 		overall_formula = 'HMA'
