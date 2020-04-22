@@ -7,6 +7,9 @@ import itertools
 from itertools import *
 import math
 
+print ("This may take a few days....")
+print ("I will work on finding ways to make this faster")
+
 def calc_ema(num, today, yesterday):
 	k = 2/(num+1)
 	EMA = float(today)*k+float(yesterday)*(1-k)
