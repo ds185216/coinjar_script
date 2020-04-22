@@ -44,10 +44,6 @@ def readsettings():
 	with open('cjsettings.txt') as json_file:  
 		data = json.load(json_file)[0]
 		minimum_periods = data['minimum_periods']
-		floor_stop = data['floor_stop']
-		floor_percent = data['floor_percent']
-		ceiling_stop = data['ceiling_stop']
-		ceiling_percent = data['ceiling_percent']
 		token = data['token']
 	if token == "":
 		print ('No token found')
@@ -56,18 +52,10 @@ def readsettings():
 def writesettings():
 	global minimum_periods, sell_stop, stop_percent, token
 	minimum_periods = 1488
-	floor_stop = 'on'
-	floor_percent = 10
-	ceiling_stop = 'on'
-	ceiling_percent = 10
 	token = ""
 	data = []
 	data.append({
 		'minimum_periods' : minimum_periods,
-		'sell_stop' : sell_stop,
-		'stop_percent' : stop_percent,
-		'ceiling_stop' : ceiling_stop,
-		'ceiling_percent' : ceiling_percent,
 		'token': token
 		})
 	with open('cjsettings.txt', 'w') as outfile:  
@@ -99,15 +87,15 @@ def buy_sell_product(BUY_SELL, W, X, Y):
 						print ('Tried to %s, insufficient funds, minimum amount %s' % (BUY_SELL, level['trade_size']) )
 
 try:
-	global invest_floor
-	with open('invest', 'rb') as handle:
-		invest_floor = pickle.load(handle)
+	with open('Roof', 'rb') as handle:
+		roof_amount = pickle.load(handle)
+		ceiling_activate = pickle.load(handle)
 except:
 	pass
 #--------------------------------------
 
 def write_daily(token_entry):
-	global headers, products
+	global headers, products, roof_amount
 	try:
 		products = json.loads(urlopen(Request('https://api.exchange.coinjar.com/products', headers=headers)).read().decode('utf-8'))
 		product_list = [i['id'] for i in products]
@@ -171,6 +159,8 @@ def write_daily(token_entry):
 			final_cur = pickle.load(handle)
 			final_ma = pickle.load(handle)
 			reverse = pickle.load(handle)
+			roof_percent = pickle.load(handle)
+			ceiling_percent = pickle.load(handle)
 	except:
 		print ('Please run find_moving_averages first!')
 		break
@@ -181,10 +171,9 @@ def write_daily(token_entry):
 	if len(db_buy) > minimum_periods:
 		
 		#Moving floor stop/ceiling stop
-		if invest_floor < ((100-sell_percent)/100)*float(sell_prices[-1]) and ceiling_stop == 'on':
-			invest_floor = ((100-sell_percent)/100)*float(sell_prices[-1])
-			with open('invest', 'wb') as handle:
-				pickle.dump(invest_floor, handle)
+		if float(sell_prices[-1]) >= roof_amount:
+			ceiling_activate = True
+			ceiling_amount = (float(sell_prices[-1])/100)*ceiling_percent
 
 		if final_formula == 'EMA':
 			average = calc_ema(final_ma[1], round(float(sell_prices[-1]), 2), sell_prices[-1-(final_ma[1])])
@@ -193,7 +182,7 @@ def write_daily(token_entry):
 		elif final_formula == 'WMA':
 			average = calc_wma(final_ma[1], sell_prices[-(final_ma[1]):-1]) 
 		
-		if average > float(sell_prices[-1]) or reverse == True and average < float(sell_prices[-1]) or floor_stop == 'on' and invest_floor >= float(sell_prices[-1]):
+		if average > float(sell_prices[-1]) or reverse == True and average < float(sell_prices[-1]) or ceiling_activate == True and float(sell_prices[-1]) <= ceiling_amount:
 			for X in range(len(accounts)):
 				if accounts[X]['asset_code'] != 'AUD' and accounts[X]['asset_code'] in final_cur:
 					ASSET = X
@@ -213,9 +202,11 @@ def write_daily(token_entry):
 			if average < float(buy_prices[-1]) or reverse == True and average > float(buy_prices[-1]):
 				if float(accounts[0]['available']) > 0:
 					buy_sell_product("buy", final_cur, round(float(buy_prices[-1]), 2), (float(accounts[0]['available'])/float(buy_prices[-1])))
-					invest_floor = ((100-sell_percent)/100)*float(sell_prices[-1])
-					with open('invest', 'wb') as handle:
-						pickle.dump(invest_floor, handle)
+					roof_amount = (float(sell_prices[-1])/100)*roof_percent
+					ceiling_activate = False
+					with open('Roof', 'wb') as handle:
+						pickle.dump(roof_amount, handle)
+						pickle.dump(ceiling_activate, handle)
 
 #_________________________________________________________________________
 schedule.every().hour.at(":00").do(write_daily, token)
