@@ -102,7 +102,7 @@ def write_daily(token_entry):
 		products = json.loads(urlopen(Request('https://api.exchange.coinjar.com/products', headers=headers)).read().decode('utf-8'))
 		product_list = [i['id'] for i in products]
 	except:
-		db_buy = pd.read_pickle('db_buy')
+		db_buy = pd.read_pickle('db_buy-hourly')
 		product_list = [x for x in db_buy]
 	
 	retries = 0
@@ -122,8 +122,8 @@ def write_daily(token_entry):
 			time.sleep(5)
 			retries +=1
 			if retries == 30:
-				db_buy = pd.read_pickle('db_buy')
-				db_sell = pd.read_pickle('db_sell')
+				db_buy = pd.read_pickle('db_buy-hourly')
+				db_sell = pd.read_pickle('db_sell-hourly')
 				buy_price = [x for x in db_buy.iloc[-1]]
 				sell_price = [x for x in db_sell.iloc[-1]]
 				success = True
@@ -151,8 +151,6 @@ def write_daily(token_entry):
 	db_buy.to_pickle('db_buy-hourly')
 	db_sell.to_pickle('db_sell-hourly')
 
-	# Need to print index (time) value
-
 #buy sell part
 	try:
 		with open('moving-averages-hourly', 'rb') as handle:
@@ -162,7 +160,7 @@ def write_daily(token_entry):
 			reverse = pickle.load(handle)
 			roof_percent = pickle.load(handle)
 			ceiling_percent = pickle.load(handle)
-			print (final_cur, db_buy[final_cur][-1])
+			print (final_cur, db_buy[final_cur].tail(1).index[0], db_buy[final_cur][-1])
 	except:
 		print ('Please run find_moving_averages first!')
 		print (db_buy.tail(1))
