@@ -150,7 +150,7 @@ def write_daily(token_entry):
 
 	db_buy.to_pickle('db_buy-hourly')
 	db_sell.to_pickle('db_sell-hourly')
-	print (final_cur, db_buy[final_cur][-1])
+
 	# Need to print index (time) value
 
 #buy sell part
@@ -162,11 +162,13 @@ def write_daily(token_entry):
 			reverse = pickle.load(handle)
 			roof_percent = pickle.load(handle)
 			ceiling_percent = pickle.load(handle)
+			print (final_cur, db_buy[final_cur][-1])
 	except:
 		print ('Please run find_moving_averages first!')
+		print (db_buy.tail(1))
 
 		#Need to fix this where it breaks the buy/sell loop if m-a-h not found
-
+	
 	buy_prices = [y for y in db_buy[final_cur]]
 	sell_prices = [y for y in db_sell[final_cur]]
 	accounts = json.loads(urlopen(Request('https://api.exchange.coinjar.com/accounts', headers=headers)).read().decode('utf-8'))
