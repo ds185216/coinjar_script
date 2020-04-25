@@ -155,7 +155,7 @@ def write_daily(token_entry):
 
 #buy sell part
 	try:
-		global final_formula, final_cur, final_ma, reverse
+		global final_formula, final_ma, reverse
 		with open('moving-averages-hourly', 'rb') as handle:
 			final_formula = pickle.load(handle)
 			final_cur = pickle.load(handle)
