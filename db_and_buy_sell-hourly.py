@@ -155,7 +155,6 @@ def write_daily(token_entry):
 
 #buy sell part
 	try:
-		global final_formula, final_ma, reverse
 		with open('moving-averages-hourly', 'rb') as handle:
 			final_formula = pickle.load(handle)
 			final_cur = pickle.load(handle)
@@ -165,7 +164,9 @@ def write_daily(token_entry):
 			ceiling_percent = pickle.load(handle)
 	except:
 		print ('Please run find_moving_averages first!')
-		break
+
+		#Need to fix this where it breaks the buy/sell loop if m-a-h not found
+
 	buy_prices = [y for y in db_buy[final_cur]]
 	sell_prices = [y for y in db_sell[final_cur]]
 	accounts = json.loads(urlopen(Request('https://api.exchange.coinjar.com/accounts', headers=headers)).read().decode('utf-8'))
@@ -173,9 +174,13 @@ def write_daily(token_entry):
 	if len(db_buy) > minimum_periods:
 		
 		#Moving floor stop/ceiling stop
-		if float(sell_prices[-1]) >= roof_amount:
-			ceiling_activate = True
-			ceiling_amount = (float(sell_prices[-1])/100)*ceiling_percent
+		try:
+			if float(sell_prices[-1]) >= roof_amount:
+				ceiling_activate = True
+				ceiling_amount = (float(sell_prices[-1])/100)*ceiling_percent
+		except:
+			ceiling_activate = False
+			ceiling_amount = 0
 
 		if final_formula == 'EMA':
 			average = calc_ema(final_ma[1], round(float(sell_prices[-1]), 2), sell_prices[-1-(final_ma[1])])
