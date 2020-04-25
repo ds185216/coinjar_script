@@ -17,6 +17,8 @@ find ways to speed up processes, multiprocessing???
 Add count of transactions so a minimum number is required, rather than the chance of one transaction made
 Find if any value in periods, instead of hourly, such as 24h, and as of certain time 16:00 etc. is of best value
 
+test with samples of first 3/4 then test again at last 1/4 to see of any profit, else work on next most profitable until come across as sample that works
+
 Throw in more formulas
 """
 

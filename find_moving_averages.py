@@ -89,7 +89,6 @@ def find_averages():
 							final_ema = test_EMA
 							final_cur = CUR
 							final_reverse = reverse
-		print (CUR, final_cash)
 
 	print ('EMA',final_cur, final_ema, (final_cash-1000)/len(db_buy), final_reverse)
 	if final_cash > overall_cash:
@@ -121,7 +120,7 @@ def find_averages():
 		for reverse in [True, False]:
 			for roof_percent in roof_percent_range:
 				for ceiling_percent in ceiling_percent_range:
-					for test_EMA in ema_range:
+					for test_wma in wma_range:
 						roof_activate = False
 						roof_amount = 0
 						cash = 1000.00
@@ -186,7 +185,7 @@ def find_averages():
 		for reverse in [True, False]:
 			for roof_percent in roof_percent_range:
 				for ceiling_percent in ceiling_percent_range:
-					for test_EMA in ema_range:
+					for test_hma in hma_range:
 						roof_activate = False
 						roof_amount = 0
 						cash = 1000.00
