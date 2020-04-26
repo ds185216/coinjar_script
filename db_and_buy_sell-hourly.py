@@ -163,9 +163,9 @@ def write_daily(token_entry):
 		#Need to fix this where it breaks the buy/sell loop if m-a-h not found
 	
 	try:
-	with open('Roof', 'rb') as handle:
-		roof_amount = pickle.load(handle)
-		ceiling_activate = pickle.load(handle)
+		with open('Roof', 'rb') as handle:
+			roof_amount = pickle.load(handle)
+			ceiling_activate = pickle.load(handle)
 	except:
 		pass
 
