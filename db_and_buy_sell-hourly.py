@@ -161,7 +161,6 @@ def write_daily(token_entry):
 		print (db_buy.tail(1))
 
 		#Need to fix this where it breaks the buy/sell loop if m-a-h not found
-	
 	try:
 		with open('Roof', 'rb') as handle:
 			roof_amount = pickle.load(handle)
