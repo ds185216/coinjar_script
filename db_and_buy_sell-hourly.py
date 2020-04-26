@@ -88,12 +88,7 @@ def buy_sell_product(BUY_SELL, W, X, Y):
 					else:
 						print ('Tried to %s, insufficient funds, minimum amount %s' % (BUY_SELL, level['trade_size']) )
 
-try:
-	with open('Roof', 'rb') as handle:
-		roof_amount = pickle.load(handle)
-		ceiling_activate = pickle.load(handle)
-except:
-	pass
+
 #--------------------------------------
 
 def write_daily(token_entry):
@@ -167,6 +162,13 @@ def write_daily(token_entry):
 
 		#Need to fix this where it breaks the buy/sell loop if m-a-h not found
 	
+	try:
+	with open('Roof', 'rb') as handle:
+		roof_amount = pickle.load(handle)
+		ceiling_activate = pickle.load(handle)
+	except:
+		pass
+
 	buy_prices = [y for y in db_buy[final_cur]]
 	sell_prices = [y for y in db_sell[final_cur]]
 	accounts = json.loads(urlopen(Request('https://api.exchange.coinjar.com/accounts', headers=headers)).read().decode('utf-8'))
@@ -178,6 +180,9 @@ def write_daily(token_entry):
 			if float(sell_prices[-1]) >= roof_amount:
 				ceiling_activate = True
 				ceiling_amount = (float(sell_prices[-1])/100)*ceiling_percent
+				with open('Roof', 'wb') as handle:
+					pickle.dump(roof_amount, handle)
+					pickle.dump(ceiling_activate, handle)
 		except:
 			ceiling_activate = False
 			ceiling_amount = 0
