@@ -20,6 +20,10 @@ Find if any value in periods, instead of hourly, such as 24h, and as of certain 
 test with samples of first 3/4 then test again at last 1/4 to see of any profit, else work on next most profitable until come across as sample that works
 
 Throw in more formulas
+
+db_buy_sell:
+buy on whole numbers of crypto rather than 0.000000001th of a value
+Need to fix where it breaks the buy/sell loop if m-a-h not found
 """
 
 def calc_ema(num, today, yesterday):
@@ -72,16 +76,16 @@ except:
 
 headers = {'Content-Type': 'application/json; charset=utf-8', 'Authorization': 'Token token=%s' % token}
 
-def buy_sell_product(BUY_SELL, W, X, Y):
+def buy_sell_product(BUY_SELL, ID, PRICE, SIZE):
 	for prod in products:
-		if prod['id'] == W:
+		if prod['id'] == ID:
 			for level in prod['price_levels']:
-				if float(level['price_min']) < X and float(level['price_max']) > X:
-					if Y > (float(level['trade_size'])):
-						values = {"product_id": W, "type": "LMT", "side": BUY_SELL, "price": str(X), "size": str(Y), "time_in_force": "GTC"}
+				if float(level['price_min']) < PRICE and float(level['price_max']) > PRICE:
+					if SIZE > (float(level['trade_size'])):
+						values = {"product_id": ID, "type": "LMT", "side": BUY_SELL, "price": str(PRICE), "size": str(SIZE), "time_in_force": "GTC"}
 						r = requests.post('https://api.exchange.coinjar.com/orders', data=json.dumps(values), headers=headers)
 						if r.status_code == 200:
-							print("Transaction OK", BUY_SELL, W, X)
+							print("Transaction OK", BUY_SELL, ID, PRICE)
 						else:
 							print("Some bogus error", r.reason)
 							print(values)
@@ -179,6 +183,7 @@ def write_daily(token_entry):
 			if float(sell_prices[-1]) >= roof_amount:
 				ceiling_activate = True
 				ceiling_amount = (float(sell_prices[-1])/100)*ceiling_percent
+				print ('Ceiling activated')
 				with open('Roof', 'wb') as handle:
 					pickle.dump(roof_amount, handle)
 					pickle.dump(ceiling_activate, handle)
@@ -198,7 +203,7 @@ def write_daily(token_entry):
 				if accounts[X]['asset_code'] != 'AUD' and accounts[X]['asset_code'] in final_cur:
 					ASSET = X
 			if float(accounts[ASSET]['available']) > 0:
-				buy_sell_product("sell", final_cur, sell_prices[-1], accounts[ASSET]['available'])
+				buy_sell_product("sell", final_cur, sell_prices[-1], float(accounts[ASSET]['available']))
 				today = True
 
 
