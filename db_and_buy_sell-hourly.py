@@ -157,8 +157,7 @@ def write_daily(token_entry):
 			final_cur = pickle.load(handle)
 			final_ma = pickle.load(handle)
 			reverse = pickle.load(handle)
-			roof_percent = pickle.load(handle)
-			ceiling_percent = pickle.load(handle)
+			overall_difference = pickle.load(handle)
 			print (final_cur, db_buy[final_cur].tail(1).index[0], db_buy[final_cur][-1])
 	except:
 		print ('Please run find_moving_averages first!')
@@ -167,10 +166,9 @@ def write_daily(token_entry):
 		#Need to fix this where it breaks the buy/sell loop if m-a-h not found
 	try:
 		with open('Roof', 'rb') as handle:
-			roof_amount = pickle.load(handle)
-			ceiling_activate = pickle.load(handle)
+			highest_amount = pickle.load(handle)
 	except:
-		pass
+		highest_amount = 0
 
 	buy_prices = [y for y in db_buy[final_cur]]
 	sell_prices = [y for y in db_sell[final_cur]]
@@ -179,34 +177,25 @@ def write_daily(token_entry):
 	if len(db_buy) > minimum_periods:
 		
 		#Moving floor stop/ceiling stop
-		try:
-			if float(sell_prices[-1]) >= roof_amount:
-				ceiling_activate = True
-				ceiling_amount = (float(sell_prices[-1])/100)*ceiling_percent
-				print ('Ceiling activated')
-				with open('Roof', 'wb') as handle:
-					pickle.dump(roof_amount, handle)
-					pickle.dump(ceiling_activate, handle)
-		except:
-			ceiling_activate = False
-			ceiling_amount = 0
+		if float(sell_prices[-1]) > highest_amount:
+			highest_amount = float(sell_prices[-1])
+			with open('Roof', 'wb') as handle:
+				pickle.dump(highest_amount, handle)
 
-		if final_formula == 'EMA':
-			average = calc_ema(final_ma[1], round(float(sell_prices[-1]), 2), sell_prices[-1-(final_ma[1])])
-		elif final_formula == 'HMA':
-			average = calc_hma(final_ma[1], sell_prices[-(final_ma[1]+int(math.sqrt(final_ma[1]))):-1])
-		elif final_formula == 'WMA':
-			average = calc_wma(final_ma[1], sell_prices[-(final_ma[1]):-1]) 
-		
-		if average > float(sell_prices[-1]) or reverse == True and average < float(sell_prices[-1]) or ceiling_activate == True and float(sell_prices[-1]) <= ceiling_amount:
+		#Sell part
+		if float(sell_prices[-1]) < (highest_amount - overall_difference):
 			for X in range(len(accounts)):
 				if accounts[X]['asset_code'] != 'AUD' and accounts[X]['asset_code'] in final_cur:
 					ASSET = X
 			if float(accounts[ASSET]['available']) > 0:
-				buy_sell_product("sell", final_cur, sell_prices[-1], float(accounts[ASSET]['available']))
+				buy_sell_product("sell", final_cur, float(sell_prices[-1]), float(accounts[ASSET]['available']))
 				today = True
+				highest_amount = 0
+				with open('Roof', 'wb') as handle:
+					pickle.dump(highest_amount, handle)
 
 
+		#Buy part
 		if today != True:
 			if final_formula == 'EMA':
 				average = calc_ema(final_ma[0], buy_prices[-1], buy_prices[-1-(final_ma[0])])
@@ -218,11 +207,6 @@ def write_daily(token_entry):
 			if average < float(buy_prices[-1]) or reverse == True and average > float(buy_prices[-1]):
 				if float(accounts[0]['available']) > 0:
 					buy_sell_product("buy", final_cur, round(float(buy_prices[-1]), 2), (float(accounts[0]['available'])/float(buy_prices[-1])))
-					roof_amount = (float(sell_prices[-1])/100)*roof_percent
-					ceiling_activate = False
-					with open('Roof', 'wb') as handle:
-						pickle.dump(roof_amount, handle)
-						pickle.dump(ceiling_activate, handle)
 
 #_________________________________________________________________________
 schedule.every().hour.at(":00").do(write_daily, token)

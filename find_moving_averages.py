@@ -10,6 +10,8 @@ import math
 print ("This may take a few days....")
 print ("I will work on finding ways to make this faster")
 
+#Need to fix highest amount to work only after confirmed buy, if it changes after attempted buy it will mess the highest price to only what its set to
+
 def calc_ema(num, today, yesterday):
 	k = 2/(num+1)
 	EMA = float(today)*k+float(yesterday)*(1-k)
@@ -34,62 +36,58 @@ def find_averages():
 	db_sell = pd.read_pickle('db_sell-hourly')
 	currencies = [i for i in db_buy.columns if 'AUD' in i]
 
-	roof_percent_range = range(100, 130)
-	ceiling_percent_range = (80, 100)
-
-
-	overall_moving_average = [0,0]
+	overall_moving_average = 0
 	overall_cash = 0
 	overall_cur = ""
 	overall_reverse = True
-
+	overall_differential = 0
 
 	#Exponential Moving Average
-	ema_range = list(itertools.product(range(2, 168), repeat=2))
-	final_ema = [0,0]
+	final_ema = 0
 	final_cash = 0
 	final_cur = ""
-
 	for CUR in currencies:
 		buy_prices = [y for y in db_buy[CUR]]
-		sell_prices = [y for y in db_sell[CUR]]
+		sell_prices = [y for y in db_sell[CUR]]	
+		increments = []
+		for x in range(1, len(sell_prices)):
+			diff = float(sell_prices[x]) - float(sell_prices[x-1])
+			if diff < 0:
+				diff = abs(diff)
+			if diff != 0:
+				increments.append(diff)
+		inc = min(increments)
 		for reverse in [True, False]:
-			for roof_percent in roof_percent_range:
-				for ceiling_percent in ceiling_percent_range:
-					for test_EMA in ema_range:
-						roof_activate = False
-						roof_amount = 0
-						cash = 1000.00
-						crypto = 0
-						for i in range(len(buy_prices)):
-							today = False
-							if float(sell_prices[i]) >= roof_amount:
-								roof_activate = True
-								floor = (float(sell_prices[i])/100)*ceiling_percent
-							if i >= test_EMA[1] and crypto > 0:
-								average = calc_ema(test_EMA[1], sell_prices[i], sell_prices[i-(test_EMA[1])])
-								if average > float(sell_prices[i]) or reverse == True and average < float(sell_prices[i]) or roof_activate == True and floor <= float(sell_prices[i]):
-									#test sell
-									cash = cash + round(crypto * float(sell_prices[i]))
-									crypto= 0
-									today = True
-									roof_activate = False
-							if i >= test_EMA[0] and today != True and cash > 0:
-								average = calc_ema(test_EMA[0], buy_prices[i], buy_prices[i-(test_EMA[0])])
-								if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]):
-									#test buy
-									crypto = crypto + (round(cash) / float(buy_prices[i]))
-									cash = 0
-									roof_amount = (float(sell_prices[i])/100)*roof_percent
-						if crypto != 0:
-							cash = cash + round(crypto * float(sell_prices[i]))
-
-						if cash > final_cash:
-							final_cash = cash
-							final_ema = test_EMA
-							final_cur = CUR
-							final_reverse = reverse
-
+			for test_EMA in range(2, 168):
+				for diff in range(1, 50):
+					cash = 1000.00
+					crypto = 0
+					highest_amount = 0
+					for i in range(len(buy_prices)):
+						today = False
+						if float(sell_prices[i]) > highest_amount:
+							highest_amount = float(sell_prices[i])
+						if crypto > 0:
+							if float(sell_prices[i]) < highest_amount - (diff * inc):
+								#test sell
+								cash = cash + round(crypto * float(sell_prices[i]))
+								crypto= 0
+								today = True
+								highest_amount = 0
+						if i >= test_EMA and today != True and cash > 0:
+							average = calc_ema(test_EMA, buy_prices[i], buy_prices[i-(test_EMA)])
+							if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]):
+								#test buy
+								crypto = crypto + (round(cash) / float(buy_prices[i]))
+								cash = 0
+					if crypto != 0:
+						cash = cash + round(crypto * float(sell_prices[i]))
+					if cash > final_cash:
+						final_cash = cash
+						final_ema = test_EMA
+						final_cur = CUR
+						final_reverse = reverse
+						final_difference = diff * inc
 	print ('EMA',final_cur, final_ema, (final_cash-1000)/len(db_buy), final_reverse)
 	if final_cash > overall_cash:
 		overall_cash = final_cash
@@ -97,147 +95,133 @@ def find_averages():
 		overall_cur = final_cur
 		overall_moving_average = final_ema
 		overall_reverse = final_reverse
-		overall_roof = roof_percent
-		overall_ceiling = ceiling_percent
+		overall_difference = final_difference
 		with open('moving-averages-hourly', 'wb') as handle:
 			pickle.dump(overall_formula, handle)
 			pickle.dump(overall_cur, handle)
 			pickle.dump(overall_moving_average, handle)
 			pickle.dump(overall_reverse, handle)
-			pickle.dump(overall_roof, handle)
-			pickle.dump(overall_ceiling, handle)
-
+			pickle.dump(overall_difference, handle)
 
 	#Weighted Moving Average
-	wma_range = list(itertools.product(range(2, 168), repeat=2))
-	final_wma = [0,0]
+	final_wma = 0
 	final_cash = 0
 	final_cur = ""
-
 	for CUR in currencies:
 		buy_prices = [y for y in db_buy[CUR]]
-		sell_prices = [y for y in db_sell[CUR]]
+		sell_prices = [y for y in db_sell[CUR]]	
+		increments = []
+		for x in range(1, len(sell_prices)):
+			diff = float(sell_prices[x]) - float(sell_prices[x-1])
+			if diff < 0:
+				diff = abs(diff)
+			if diff != 0:
+				increments.append(diff)
+		inc = min(increments)
 		for reverse in [True, False]:
-			for roof_percent in roof_percent_range:
-				for ceiling_percent in ceiling_percent_range:
-					for test_wma in wma_range:
-						roof_activate = False
-						roof_amount = 0
-						cash = 1000.00
-						crypto = 0
-						for i in range(len(buy_prices)):
-							today = False
-							if float(sell_prices[i]) >= roof_amount:
-								roof_activate = True
-								floor = (float(sell_prices[i])/100)*ceiling_percent
-							if i >= test_wma[1] and crypto > 0:
-								average = calc_wma(test_wma[1], sell_prices[i-test_wma[1]:i])
-								if average > float(sell_prices[i]) or reverse == True and average < float(sell_prices[i]) or roof_activate == True and floor <= float(sell_prices[i]):
-									#test sell
-									cash = cash + round(crypto * float(sell_prices[i]))
-									crypto= 0
-									today = True
-									roof_activate = False
-							if i >= test_wma[0] and today != True and cash > 0:
-								average = calc_wma(test_wma[0], buy_prices[i-test_wma[0]:i])
-								if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]):
-									#test buy
-									crypto = crypto + (round(cash) / float(buy_prices[i]))
-									cash = 0
-									roof_amount = (float(sell_prices[i])/100)*roof_percent
-						if crypto != 0:
-							cash = cash + round(crypto * float(sell_prices[i]))
-						if cash > final_cash:
-							final_cash = cash
-							final_wma = test_wma
-							final_cur = CUR
-							final_reverse = reverse
-
+			for test_wma in range(2, 168):
+				for diff in range(1, 50):
+					cash = 1000.00
+					crypto = 0
+					highest_amount = 0
+					for i in range(len(buy_prices)):
+						today = False
+						if float(sell_prices[i]) > highest_amount:
+							highest_amount = float(sell_prices[i])
+						if crypto > 0:
+							if float(sell_prices[i]) < highest_amount - (diff * inc):
+								#test sell
+								cash = cash + round(crypto * float(sell_prices[i]))
+								crypto= 0
+								today = True
+								highest_amount = 0
+						if i >= test_wma and today != True and cash > 0:
+							average = calc_wma(test_wma, buy_prices[i-test_wma:i])
+							if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]):
+								#test buy
+								crypto = crypto + (round(cash) / float(buy_prices[i]))
+								cash = 0
+					if crypto != 0:
+						cash = cash + round(crypto * float(sell_prices[i]))
+					if cash > final_cash:
+						final_cash = cash
+						final_wma = test_wma
+						final_cur = CUR
+						final_reverse = reverse
+						final_difference = diff * inc
 	print ('WMA',final_cur, final_wma, (final_cash-1000)/len(db_buy), final_reverse)
 	if final_cash > overall_cash:
 		overall_cash = final_cash
 		overall_formula = 'WMA'
 		overall_cur = final_cur
-		overall_moving_average = final_ema
+		overall_moving_average = final_wma
 		overall_reverse = final_reverse
-		overall_roof = roof_percent
-		overall_ceiling = ceiling_percent
+		overall_difference = final_difference
 		with open('moving-averages-hourly', 'wb') as handle:
 			pickle.dump(overall_formula, handle)
 			pickle.dump(overall_cur, handle)
 			pickle.dump(overall_moving_average, handle)
 			pickle.dump(overall_reverse, handle)
-			pickle.dump(overall_roof, handle)
-			pickle.dump(overall_ceiling, handle)
-
-		
-
+			pickle.dump(overall_difference, handle)
 
 	#Hull Moving Average
-	hma_range = list(itertools.product(range(4, 168), repeat=2))
-	final_hma = [0,0]
+	final_hma = 0
 	final_cash = 0
 	final_cur = ""
-	roof_activate = False
 	for CUR in currencies:
 		buy_prices = [y for y in db_buy[CUR]]
-		sell_prices = [y for y in db_sell[CUR]]
+		sell_prices = [y for y in db_sell[CUR]]	
+		increments = []
+		for x in range(1, len(sell_prices)):
+			diff = float(sell_prices[x]) - float(sell_prices[x-1])
+			if diff < 0:
+				diff = abs(diff)
+			if diff != 0:
+				increments.append(diff)
+		inc = min(increments)
 		for reverse in [True, False]:
-			for roof_percent in roof_percent_range:
-				for ceiling_percent in ceiling_percent_range:
-					for test_hma in hma_range:
-						roof_activate = False
-						roof_amount = 0
-						cash = 1000.00
-						crypto = 0
-						for i in range(len(buy_prices)):
-							today = False
-							if float(sell_prices[i]) >= roof_amount:
-								roof_activate = True
-								floor = (float(sell_prices[i])/100)*ceiling_percent
-							if i >= (test_hma[1]+math.sqrt(test_hma[1])) and crypto > 0:
-								average = calc_hma(test_hma[1], sell_prices[(i-(test_hma[1]+int(math.sqrt(test_hma[1])))):i])
-								if average > float(sell_prices[i]) or reverse == True and average < float(sell_prices[i]) or roof_activate == True and floor <= float(sell_prices[i]):
-									#test sell
-									cash = cash + round(crypto * float(sell_prices[i]))
-									crypto= 0
-									today = True
-									roof_activate = False
-							if i >= (test_hma[0]+math.sqrt(test_hma[0])) and today != True and cash > 0:
-								average = calc_hma(test_hma[0], buy_prices[(i-(test_hma[0]+int(math.sqrt(test_hma[0])))):i])
-								if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]):
-									#test buy
-									crypto = crypto + (round(cash) / float(buy_prices[i]))
-									cash = 0
-									roof_amount = (float(sell_prices[i])/100)*roof_percent
-						if crypto != 0:
-							cash = cash + round(crypto * float(sell_prices[i]))
-						if cash > final_cash:
-							final_cash = cash
-							final_hma = test_hma
-							final_cur = CUR
-							final_reverse = reverse
-
+			for test_hma in range(4, 168):
+				for diff in range(1, 50):
+					cash = 1000.00
+					crypto = 0
+					highest_amount = 0
+					for i in range(len(buy_prices)):
+						today = False
+						if float(sell_prices[i]) > highest_amount:
+							highest_amount = float(sell_prices[i])
+						if crypto > 0:
+							if float(sell_prices[i]) < highest_amount - (diff * inc):
+								#test sell
+								cash = cash + round(crypto * float(sell_prices[i]))
+								crypto= 0
+								today = True
+								highest_amount = 0
+						if i >= test_hma and today != True and cash > 0:
+							average = calc_hma(test_hma, buy_prices[(i-(test_hma+int(math.sqrt(test_hma)))):i])
+							if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]):
+								#test buy
+								crypto = crypto + (round(cash) / float(buy_prices[i]))
+								cash = 0
+					if crypto != 0:
+						cash = cash + round(crypto * float(sell_prices[i]))
+					if cash > final_cash:
+						final_cash = cash
+						final_hma = test_hma
+						final_cur = CUR
+						final_reverse = reverse
+						final_difference = diff * inc
 	print ('HMA',final_cur, final_hma, (final_cash-1000)/len(db_buy), final_reverse)
 	if final_cash > overall_cash:
 		overall_cash = final_cash
 		overall_formula = 'HMA'
 		overall_cur = final_cur
-		overall_moving_average = final_ema
+		overall_moving_average = final_hma
 		overall_reverse = final_reverse
-		overall_roof = roof_percent
-		overall_ceiling = ceiling_percent
+		overall_difference = final_difference
 		with open('moving-averages-hourly', 'wb') as handle:
 			pickle.dump(overall_formula, handle)
 			pickle.dump(overall_cur, handle)
 			pickle.dump(overall_moving_average, handle)
 			pickle.dump(overall_reverse, handle)
-			pickle.dump(overall_roof, handle)
-			pickle.dump(overall_ceiling, handle)
-
-
-
-
-
-	
+			pickle.dump(overall_difference, handle)
 find_averages()
