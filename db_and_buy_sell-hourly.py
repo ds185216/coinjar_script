@@ -198,11 +198,11 @@ def write_daily(token_entry):
 		#Buy part
 		if today != True:
 			if final_formula == 'EMA':
-				average = calc_ema(final_ma[0], buy_prices[-1], buy_prices[-1-(final_ma[0])])
+				average = calc_ema(final_ma, buy_prices[-1], buy_prices[-1-(final_ma)])
 			elif final_formula == 'HMA':
-				average = calc_hma(final_ma[0], buy_prices[-(final_ma[0]+int(math.sqrt(final_ma[0]))):-1])
+				average = calc_hma(final_ma, buy_prices[-(final_ma+int(math.sqrt(final_ma))):-1])
 			elif final_formula == 'WMA':
-				average = calc_wma(final_ma[0], buy_prices[-(final_ma[0]):-1])
+				average = calc_wma(final_ma, buy_prices[-(final_ma):-1])
 
 			if average < float(buy_prices[-1]) or reverse == True and average > float(buy_prices[-1]):
 				if float(accounts[0]['available']) > 0:
