@@ -80,6 +80,7 @@ def find_averages():
 								#test buy
 								crypto = crypto + (round(cash) / float(buy_prices[i]))
 								cash = 0
+								highest_amount = float(sell_prices[i])
 					if crypto != 0:
 						cash = cash + round(crypto * float(sell_prices[i]))
 					if cash > final_cash:
@@ -141,6 +142,7 @@ def find_averages():
 								#test buy
 								crypto = crypto + (round(cash) / float(buy_prices[i]))
 								cash = 0
+								highest_amount = float(sell_prices[i])
 					if crypto != 0:
 						cash = cash + round(crypto * float(sell_prices[i]))
 					if cash > final_cash:
@@ -202,6 +204,7 @@ def find_averages():
 								#test buy
 								crypto = crypto + (round(cash) / float(buy_prices[i]))
 								cash = 0
+								highest_amount = float(sell_prices[i])
 					if crypto != 0:
 						cash = cash + round(crypto * float(sell_prices[i]))
 					if cash > final_cash:
