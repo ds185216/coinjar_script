@@ -87,7 +87,7 @@ def buy_sell_product(BUY_SELL, ID, PRICE, SIZE):
 						if r.status_code == 200:
 							print("Transaction OK", BUY_SELL, ID, PRICE)
 							if BUY_SELL == 'buy':
-								highest_amount = float(price)
+								highest_amount = float(PRICE)
 							elif BUY_SELL == 'sell':
 								highest_amount = 0
 							with open('Roof', 'wb') as handle:
