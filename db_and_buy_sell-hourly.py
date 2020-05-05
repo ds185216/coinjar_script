@@ -86,6 +86,12 @@ def buy_sell_product(BUY_SELL, ID, PRICE, SIZE):
 						r = requests.post('https://api.exchange.coinjar.com/orders', data=json.dumps(values), headers=headers)
 						if r.status_code == 200:
 							print("Transaction OK", BUY_SELL, ID, PRICE)
+							if BUY_SELL == 'buy':
+								highest_amount = float(price)
+							elif BUY_SELL == 'sell':
+								highest_amount = 0
+							with open('Roof', 'wb') as handle:
+								pickle.dump(highest_amount, handle)
 						else:
 							print("Some bogus error", r.reason)
 							print(values)
@@ -96,7 +102,7 @@ def buy_sell_product(BUY_SELL, ID, PRICE, SIZE):
 #--------------------------------------
 
 def write_daily(token_entry):
-	global headers, products, roof_amount
+	global headers, products, highest_amount
 	try:
 		products = json.loads(urlopen(Request('https://api.exchange.coinjar.com/products', headers=headers)).read().decode('utf-8'))
 		product_list = [i['id'] for i in products]
@@ -179,6 +185,7 @@ def write_daily(token_entry):
 		#Moving floor stop/ceiling stop
 		if float(sell_prices[-1]) > highest_amount:
 			highest_amount = float(sell_prices[-1])
+			print ('Floor set to ', highest_amount - overall_difference)
 			with open('Roof', 'wb') as handle:
 				pickle.dump(highest_amount, handle)
 
@@ -190,11 +197,7 @@ def write_daily(token_entry):
 			if float(accounts[ASSET]['available']) > 0:
 				buy_sell_product("sell", final_cur, float(sell_prices[-1]), float(accounts[ASSET]['available']))
 				today = True
-				highest_amount = 0
-				with open('Roof', 'wb') as handle:
-					pickle.dump(highest_amount, handle)
-
-
+				
 		#Buy part
 		if today != True:
 			if final_formula == 'EMA':
