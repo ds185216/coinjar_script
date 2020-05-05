@@ -22,7 +22,6 @@ test with samples of first 3/4 then test again at last 1/4 to see of any profit,
 Throw in more formulas
 
 db_buy_sell:
-buy on whole numbers of crypto rather than 0.000000001th of a value
 Need to fix where it breaks the buy/sell loop if m-a-h not found
 """
 
@@ -82,7 +81,8 @@ def buy_sell_product(BUY_SELL, ID, PRICE, SIZE):
 			for level in prod['price_levels']:
 				if float(level['price_min']) < PRICE and float(level['price_max']) > PRICE:
 					if SIZE > (float(level['trade_size'])):
-						values = {"product_id": ID, "type": "LMT", "side": BUY_SELL, "price": str(PRICE), "size": str(SIZE), "time_in_force": "GTC"}
+						fixed_size = int(SIZE/float(level['trade_size']))*float(level['trade_size'])
+						values = {"product_id": ID, "type": "LMT", "side": BUY_SELL, "price": str(PRICE), "size": str(fixed_size), "time_in_force": "GTC"}
 						r = requests.post('https://api.exchange.coinjar.com/orders', data=json.dumps(values), headers=headers)
 						if r.status_code == 200:
 							print("Transaction OK", BUY_SELL, ID, PRICE)
