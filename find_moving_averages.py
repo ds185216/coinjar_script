@@ -69,7 +69,7 @@ def find_averages():
 						if float(sell_prices[i]) > highest_amount:
 							highest_amount = float(sell_prices[i])
 						if crypto > 0:
-							if float(sell_prices[i]) < highest_amount - (diff * inc):
+							if float(sell_prices[i]) < highest_amount - (diff * inc) and cash == 0:
 								#test sell
 								cash = cash + round(crypto * float(sell_prices[i]))
 								crypto= 0
@@ -78,7 +78,7 @@ def find_averages():
 								shift +=1
 						if i >= test_EMA and today != True and cash > 0:
 							average = calc_ema(test_EMA, buy_prices[i], buy_prices[i-(test_EMA)])
-							if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]):
+							if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]) and crypto == 0:
 								#test buy
 								crypto = crypto + (round(cash) / float(buy_prices[i]))
 								cash = 0
@@ -134,7 +134,7 @@ def find_averages():
 						if float(sell_prices[i]) > highest_amount:
 							highest_amount = float(sell_prices[i])
 						if crypto > 0:
-							if float(sell_prices[i]) < highest_amount - (diff * inc):
+							if float(sell_prices[i]) < highest_amount - (diff * inc) and cash == 0:
 								#test sell
 								cash = cash + round(crypto * float(sell_prices[i]))
 								crypto= 0
@@ -143,7 +143,7 @@ def find_averages():
 								shift +=1
 						if i >= test_wma and today != True and cash > 0:
 							average = calc_wma(test_wma, buy_prices[i-test_wma:i])
-							if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]):
+							if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]) and crypto == 0:
 								#test buy
 								crypto = crypto + (round(cash) / float(buy_prices[i]))
 								cash = 0
@@ -199,14 +199,14 @@ def find_averages():
 						if float(sell_prices[i]) > highest_amount:
 							highest_amount = float(sell_prices[i])
 						if crypto > 0:
-							if float(sell_prices[i]) < highest_amount - (diff * inc):
+							if float(sell_prices[i]) < highest_amount - (diff * inc) and cash == 0:
 								#test sell
 								cash = cash + round(crypto * float(sell_prices[i]))
 								crypto= 0
 								today = True
 								highest_amount = 0
 								shift +=1
-						if i >= test_hma+int(math.sqrt(test_hma)) and today != True and cash > 0:
+						if i >= test_hma+int(math.sqrt(test_hma)) and today != True and crypto == 0:
 							average = calc_hma(test_hma, buy_prices[(i-(test_hma+int(math.sqrt(test_hma)))):i])
 							if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]):
 								#test buy
