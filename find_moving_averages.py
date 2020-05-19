@@ -7,233 +7,150 @@ import itertools
 from itertools import *
 import math
 
-print ("This may take a few days....")
-print ("I will work on finding ways to make this faster")
+from averages_list import averages, averages_names, averages_dict
 
-#Need to fix highest amount to work only after confirmed buy, if it changes after attempted buy it will mess the highest price to only what its set to
+print ("Grab a coffee, this may take a while...")
 
-def calc_ema(num, today, yesterday):
-	k = 2/(num+1)
-	EMA = float(today)*k+float(yesterday)*(1-k)
-	return EMA
+buy = pd.read_pickle('db_buy-5min')
+sell = pd.read_pickle('db_sell-5min')
 
-def calc_wma(num, data):
-	first_sum = 0
-	for i in range(1, num+1):
-		first_sum = first_sum + (float(data[-i]) * i)
-	return first_sum/sum(range(1, num+1))
+print ('Database size:', len(buy), 'entries')
 
-def calc_hma(num, _data):
-	half_length = int(num/2)
-	sqrt_length = int(math.sqrt(num))
-	new_list = []
-	for i in range(1, sqrt_length+1):
-		new_list.append(2 * calc_wma(half_length, _data[-(i+half_length):-i]) - calc_wma(num, _data[-(i+num):-i]))
-	return calc_wma(sqrt_length, new_list)
+if len(buy) > 2688:
+	sample_buy = buy.head(2016)
+	sample_sell = sell.head(2016)
+	test_buy = buy.tail(len(buy)-2016)
+	test_sell = buy.tail(len(sell)-2016)
+else:
+	sample_buy = buy.head(int(len(buy)/2))
+	sample_sell = sell.head((int(len(sell)/2)))
+	test_buy = buy.tail(int(len(buy)/2))
+	test_sell = sell.tail(int(len(sell)/2))
 
-def find_averages():
-	db_buy = pd.read_pickle('db_buy-hourly')
-	db_sell = pd.read_pickle('db_sell-hourly')
+#play with sample sizes, this can help with speeding up the process
+
+
+
+def find_averages(db_buy, db_sell):
+	global result
+	result = []
+
 	currencies = [i for i in db_buy.columns if 'AUD' in i]
+	for calc in range(len(averages)):
+		for CUR in currencies:
+			buy_prices = [y for y in db_buy[CUR]]
+			sell_prices = [y for y in db_sell[CUR]]	
+			increments = []
+			for x in range(1, len(sell_prices)):
+				diff = float(sell_prices[x]) - float(sell_prices[x-1])
+				if diff < 0:
+					diff = abs(diff)
+				if diff != 0:
+					increments.append(diff)
+			inc = min(increments)
+			for reverse in [True, False]:
+				for test_ma in range(2, 72):
+					for diff in range(1, 60):
+						cash = 1000.00
+						crypto = 0
+						highest_amount = 0
+						shift = 0
+						for i in range(len(buy_prices)):
+							today = False
+							if float(sell_prices[i]) > highest_amount:
+								highest_amount = float(sell_prices[i])
+							if crypto > 0:
+								if float(sell_prices[i]) < highest_amount - (diff * inc) and cash == 0:
+									#test sell
+									cash = cash + round(crypto * float(sell_prices[i]))
+									crypto= 0
+									today = True
+									highest_amount = 0
+									shift +=1
+							if i >= test_ma+int(math.sqrt(test_ma)) and today != True and cash > 0:
+								average = averages[calc](test_ma, buy_prices[(i-(test_ma+int(math.sqrt(test_ma)))):i])
+								if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]) and crypto == 0:
+									#test buy
+									crypto = crypto + (round(cash) / float(buy_prices[i]))
+									cash = 0
+									highest_amount = float(buy_prices[i])
+									shift +=1
+						if crypto != 0:
+							cash = cash + round(crypto * float(sell_prices[i]))
+						if cash > 1000 and shift > len(db_buy)/288:
+							result.append({'name' : averages_names[calc],
+								'test_ma' : test_ma,
+								'name' : averages_names[calc],
+								'CUR' : CUR,
+								'reverse' : reverse,
+								'differential' : diff*inc})
+	print (len(result), 'profitable formulas found')
 
-	overall_moving_average = 0
+
+def test_averages(db_buy, db_sell, data):
 	overall_cash = 0
-	overall_cur = ""
-	overall_reverse = True
-	overall_differential = 0
+	for line in data:
+		test_ma = line['test_ma']
+		MA = line['name']
+		CUR = line['CUR']
+		reverse = line['reverse']
+		diff = line['differential']
 
-	#Exponential Moving Average
-	final_ema = 0
-	final_cash = 0
-	final_cur = ""
-	for CUR in currencies:
 		buy_prices = [y for y in db_buy[CUR]]
-		sell_prices = [y for y in db_sell[CUR]]	
-		increments = []
-		for x in range(1, len(sell_prices)):
-			diff = float(sell_prices[x]) - float(sell_prices[x-1])
-			if diff < 0:
-				diff = abs(diff)
-			if diff != 0:
-				increments.append(diff)
-		inc = min(increments)
-		for reverse in [True, False]:
-			for test_EMA in range(2, 168):
-				for diff in range(1, 500):
-					cash = 1000.00
-					crypto = 0
+		sell_prices = [y for y in db_sell[CUR]]
+		cash = 1000.00
+		crypto = 0
+		highest_amount = 0
+		for i in range(len(buy_prices)):
+			today = False
+			if float(sell_prices[i]) > highest_amount:
+				highest_amount = float(sell_prices[i])
+			if crypto > 0:
+				if float(sell_prices[i]) < highest_amount - (diff) and cash == 0:
+					#test sell
+					cash = cash + round(crypto * float(sell_prices[i]))
+					crypto= 0
+					today = True
 					highest_amount = 0
-					shift = 0
-					for i in range(len(buy_prices)):
-						today = False
-						if float(sell_prices[i]) > highest_amount:
-							highest_amount = float(sell_prices[i])
-						if crypto > 0:
-							if float(sell_prices[i]) < highest_amount - (diff * inc) and cash == 0:
-								#test sell
-								cash = cash + round(crypto * float(sell_prices[i]))
-								crypto= 0
-								today = True
-								highest_amount = 0
-								shift +=1
-						if i >= test_EMA and today != True and cash > 0:
-							average = calc_ema(test_EMA, buy_prices[i], buy_prices[i-(test_EMA)])
-							if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]) and crypto == 0:
-								#test buy
-								crypto = crypto + (round(cash) / float(buy_prices[i]))
-								cash = 0
-								highest_amount = float(buy_prices[i])
-								shift +=1
-					if crypto != 0:
-						cash = cash + round(crypto * float(sell_prices[i]))
-					if cash > final_cash and shift >= len(db_buy)/168:
-						final_cash = cash
-						final_ema = test_EMA
-						final_cur = CUR
-						final_reverse = reverse
-						final_difference = diff * inc
-	print ('EMA',final_cur, final_ema, final_cash, final_reverse, final_difference)
-	if final_cash > overall_cash:
-		overall_cash = final_cash
-		overall_formula = 'EMA'
-		overall_cur = final_cur
-		overall_moving_average = final_ema
-		overall_reverse = final_reverse
-		overall_difference = final_difference
-		with open('moving-averages-hourly', 'wb') as handle:
+			if i >= test_ma+int(math.sqrt(test_ma)) and today != True and cash > 0:
+				average = averages_dict[MA](test_ma, buy_prices[(i-(test_ma+int(math.sqrt(test_ma)))):i])
+				if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]) and crypto == 0:
+					#test buy
+					crypto = crypto + (round(cash) / float(buy_prices[i]))
+					cash = 0
+					highest_amount = float(buy_prices[i])
+		if crypto != 0:
+			cash = cash + round(crypto * float(sell_prices[i]))
+		if cash > overall_cash:
+			overall_cash = cash
+			overall_formula = MA
+			overall_cur = CUR
+			overall_moving_average = test_ma
+			overall_reverse = reverse
+			overall_difference = diff
+	print (overall_cash, overall_formula, overall_moving_average, overall_cur, overall_reverse, overall_difference)
+	if overall_cash > 1000:
+		with open('moving-averages-5min', 'wb') as handle:
 			pickle.dump(overall_formula, handle)
 			pickle.dump(overall_cur, handle)
 			pickle.dump(overall_moving_average, handle)
 			pickle.dump(overall_reverse, handle)
 			pickle.dump(overall_difference, handle)
+	else:
+		print ('Not profitable, no data written')
 
-	#Weighted Moving Average
-	final_wma = 0
-	final_cash = 0
-	final_cur = ""
-	for CUR in currencies:
-		buy_prices = [y for y in db_buy[CUR]]
-		sell_prices = [y for y in db_sell[CUR]]	
-		increments = []
-		for x in range(1, len(sell_prices)):
-			diff = float(sell_prices[x]) - float(sell_prices[x-1])
-			if diff < 0:
-				diff = abs(diff)
-			if diff != 0:
-				increments.append(diff)
-		inc = min(increments)
-		for reverse in [True, False]:
-			for test_wma in range(2, 168):
-				for diff in range(1, 500):
-					cash = 1000.00
-					crypto = 0
-					highest_amount = 0
-					shift = 0
-					for i in range(len(buy_prices)):
-						today = False
-						if float(sell_prices[i]) > highest_amount:
-							highest_amount = float(sell_prices[i])
-						if crypto > 0:
-							if float(sell_prices[i]) < highest_amount - (diff * inc) and cash == 0:
-								#test sell
-								cash = cash + round(crypto * float(sell_prices[i]))
-								crypto= 0
-								today = True
-								highest_amount = 0
-								shift +=1
-						if i >= test_wma and today != True and cash > 0:
-							average = calc_wma(test_wma, buy_prices[i-test_wma:i])
-							if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]) and crypto == 0:
-								#test buy
-								crypto = crypto + (round(cash) / float(buy_prices[i]))
-								cash = 0
-								highest_amount = float(buy_prices[i])
-								shift +=1
-					if crypto != 0:
-						cash = cash + round(crypto * float(sell_prices[i]))
-					if cash > final_cash and shift >= len(db_buy)/168:
-						final_cash = cash
-						final_wma = test_wma
-						final_cur = CUR
-						final_reverse = reverse
-						final_difference = diff * inc
-	print ('WMA',final_cur, final_wma, final_cash, final_reverse, final_difference)
-	if final_cash > overall_cash:
-		overall_cash = final_cash
-		overall_formula = 'WMA'
-		overall_cur = final_cur
-		overall_moving_average = final_wma
-		overall_reverse = final_reverse
-		overall_difference = final_difference
-		with open('moving-averages-hourly', 'wb') as handle:
+
+
+find_averages(sample_buy, sample_sell)
+
+if len(result) > 0:
+	test_averages(test_buy, test_sell, result)
+else:
+	print ('No formulas found')
+"""
+		with open('moving-averages-5min', 'wb') as handle:
 			pickle.dump(overall_formula, handle)
 			pickle.dump(overall_cur, handle)
 			pickle.dump(overall_moving_average, handle)
 			pickle.dump(overall_reverse, handle)
-			pickle.dump(overall_difference, handle)
-
-	#Hull Moving Average
-	final_hma = 0
-	final_cash = 0
-	final_cur = ""
-	for CUR in currencies:
-		buy_prices = [y for y in db_buy[CUR]]
-		sell_prices = [y for y in db_sell[CUR]]	
-		increments = []
-		for x in range(1, len(sell_prices)):
-			diff = float(sell_prices[x]) - float(sell_prices[x-1])
-			if diff < 0:
-				diff = abs(diff)
-			if diff != 0:
-				increments.append(diff)
-		inc = min(increments)
-		for reverse in [True, False]:
-			for test_hma in range(4, 168):
-				for diff in range(1, 500):
-					cash = 1000.00
-					crypto = 0
-					highest_amount = 0
-					shift = 0
-					for i in range(len(buy_prices)):
-						today = False
-						if float(sell_prices[i]) > highest_amount:
-							highest_amount = float(sell_prices[i])
-						if crypto > 0:
-							if float(sell_prices[i]) < highest_amount - (diff * inc) and cash == 0:
-								#test sell
-								cash = cash + round(crypto * float(sell_prices[i]))
-								crypto= 0
-								today = True
-								highest_amount = 0
-								shift +=1
-						if i >= test_hma+int(math.sqrt(test_hma)) and today != True and crypto == 0:
-							average = calc_hma(test_hma, buy_prices[(i-(test_hma+int(math.sqrt(test_hma)))):i])
-							if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]):
-								#test buy
-								crypto = crypto + (round(cash) / float(buy_prices[i]))
-								cash = 0
-								highest_amount = float(buy_prices[i])
-								shift +=1
-					if crypto != 0:
-						cash = cash + round(crypto * float(sell_prices[i]))
-					if cash > final_cash and shift >= len(db_buy)/168:
-						final_cash = cash
-						final_hma = test_hma
-						final_cur = CUR
-						final_reverse = reverse
-						final_difference = diff * inc
-	print ('HMA',final_cur, final_hma, final_cash, final_reverse, final_difference)
-	if final_cash > overall_cash:
-		overall_cash = final_cash
-		overall_formula = 'HMA'
-		overall_cur = final_cur
-		overall_moving_average = final_hma
-		overall_reverse = final_reverse
-		overall_difference = final_difference
-		with open('moving-averages-hourly', 'wb') as handle:
-			pickle.dump(overall_formula, handle)
-			pickle.dump(overall_cur, handle)
-			pickle.dump(overall_moving_average, handle)
-			pickle.dump(overall_reverse, handle)
-			pickle.dump(overall_difference, handle)
-find_averages()
+			pickle.dump(overall_difference, handle)"""
