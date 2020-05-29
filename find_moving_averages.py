@@ -51,42 +51,42 @@ def find_averages(db_buy, db_sell):
 			for reverse in [True, False]:
 				for test_ma in range(2, 72):
 					for floor_diff in range(1, 60):
-							cash = 1000.00
-							crypto = 0
-							highest_amount = 0
-							buy_amount = 0
-							shift = 0
-							for i in range(len(buy_prices)):
-								today = False
-								if float(sell_prices[i]) > highest_amount:
-									highest_amount = float(sell_prices[i])
-								if crypto > 0:
-									if (float(sell_prices[i]) < highest_amount - (floor_diff * inc) or float(sell_prices[i]) >= ((floor_diff * inc) + buy_amount)) and cash == 0:
-										#test sell
-										cash = cash + round(crypto * float(sell_prices[i]))
-										crypto= 0
-										today = True
-										highest_amount = 0
-										shift +=1
-								if i >= test_ma+int(math.sqrt(test_ma)) and today != True:
-									average = averages[calc](test_ma, buy_prices[(i-(test_ma+int(math.sqrt(test_ma)))):i])
-									if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]) and crypto == 0:
-										#test buy
-										crypto = crypto + (round(cash) / float(buy_prices[i]))
-										cash = 0
-										highest_amount = float(buy_prices[i])
-										buy_amount = float(buy_prices[i])
-										shift +=1
-							if crypto != 0:
-								cash = cash + round(crypto * float(sell_prices[i]))
-							if cash > 1000 and shift > len(db_buy)/288:
-								result.append({'name' : averages_names[calc],
-									'test_ma' : test_ma,
-									'name' : averages_names[calc],
-									'CUR' : CUR,
-									'reverse' : reverse,
-									'floor_differential' : floor_diff*inc
-									})
+						cash = 1000.00
+						crypto = 0
+						highest_amount = 0
+						buy_amount = 0
+						shift = 0
+						for i in range(len(buy_prices)):
+							today = False
+							if float(sell_prices[i]) > highest_amount:
+								highest_amount = float(sell_prices[i])
+							if crypto > 0:
+								if (float(sell_prices[i]) < highest_amount - (floor_diff * inc) or float(sell_prices[i]) >= ((floor_diff * inc) + buy_amount)) and cash == 0:
+									#test sell
+									cash = cash + round(crypto * float(sell_prices[i]))
+									crypto= 0
+									today = True
+									highest_amount = 0
+									shift +=1
+							if i >= test_ma+int(math.sqrt(test_ma)) and today != True:
+								average = averages[calc](test_ma, buy_prices[(i-(test_ma+int(math.sqrt(test_ma)))):i])
+								if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]) and crypto == 0:
+									#test buy
+									crypto = crypto + (round(cash) / float(buy_prices[i]))
+									cash = 0
+									highest_amount = float(buy_prices[i])
+									buy_amount = float(buy_prices[i])
+									shift +=1
+						if crypto != 0:
+							cash = cash + round(crypto * float(sell_prices[i]))
+						if cash > 1000 and shift > len(db_buy)/288:
+							result.append({'name' : averages_names[calc],
+								'test_ma' : test_ma,
+								'name' : averages_names[calc],
+								'CUR' : CUR,
+								'reverse' : reverse,
+								'floor_differential' : floor_diff*inc
+								})
 	print (len(result), 'profitable formulas found')
 
 
