@@ -51,7 +51,6 @@ def find_averages(db_buy, db_sell):
 			for reverse in [True, False]:
 				for test_ma in range(2, 72):
 					for floor_diff in range(1, 60):
-						for roof_diff in range(1, 60):
 							cash = 1000.00
 							crypto = 0
 							highest_amount = 0
@@ -62,7 +61,7 @@ def find_averages(db_buy, db_sell):
 								if float(sell_prices[i]) > highest_amount:
 									highest_amount = float(sell_prices[i])
 								if crypto > 0:
-									if (float(sell_prices[i]) < highest_amount - (floor_diff * inc) or float(sell_prices[i]) >= ((roof_diff * inc) + buy_amount)) and cash == 0:
+									if (float(sell_prices[i]) < highest_amount - (floor_diff * inc) or float(sell_prices[i]) >= ((floor_diff * inc) + buy_amount)) and cash == 0:
 										#test sell
 										cash = cash + round(crypto * float(sell_prices[i]))
 										crypto= 0
@@ -86,8 +85,7 @@ def find_averages(db_buy, db_sell):
 									'name' : averages_names[calc],
 									'CUR' : CUR,
 									'reverse' : reverse,
-									'floor_differential' : floor_diff*inc,
-									'roof_differential' : roof_diff*inc
+									'floor_differential' : floor_diff*inc
 									})
 	print (len(result), 'profitable formulas found')
 
@@ -100,7 +98,6 @@ def test_averages(db_buy, db_sell, data):
 		CUR = line['CUR']
 		reverse = line['reverse']
 		floor_diff = line['floor_differential']
-		roof_diff = line['roof_differential']
 
 		buy_prices = [y for y in db_buy[CUR]]
 		sell_prices = [y for y in db_sell[CUR]]
@@ -113,7 +110,7 @@ def test_averages(db_buy, db_sell, data):
 			if float(sell_prices[i]) > highest_amount:
 				highest_amount = float(sell_prices[i])
 			if crypto > 0:
-				if (float(sell_prices[i]) < highest_amount - (floor_diff) or float(sell_prices[i]) >= (roof_diff + buy_amount)) and cash == 0:
+				if (float(sell_prices[i]) < highest_amount - (floor_diff) or float(sell_prices[i]) >= (floor_diff + buy_amount)) and cash == 0:
 					#test sell
 					cash = cash + round(crypto * float(sell_prices[i]))
 					crypto= 0
@@ -136,7 +133,6 @@ def test_averages(db_buy, db_sell, data):
 			overall_moving_average = test_ma
 			overall_reverse = reverse
 			overall_floor_difference = floor_diff
-			overall_roof_difference = roof_diff
 	print (overall_cash, overall_formula, overall_moving_average, overall_cur, overall_reverse, overall_difference)
 	if overall_cash > 1000:
 		with open('moving-averages-5min', 'wb') as handle:
@@ -145,7 +141,6 @@ def test_averages(db_buy, db_sell, data):
 			pickle.dump(overall_moving_average, handle)
 			pickle.dump(overall_reverse, handle)
 			pickle.dump(overall_floor_difference, handle)
-			pickle.dump(overall_roof_difference, handle)
 	else:
 		print ('Not profitable, no data written')
 
@@ -157,10 +152,3 @@ if len(result) > 0:
 	test_averages(test_buy, test_sell, result)
 else:
 	print ('No formulas found')
-"""
-		with open('moving-averages-5min', 'wb') as handle:
-			pickle.dump(overall_formula, handle)
-			pickle.dump(overall_cur, handle)
-			pickle.dump(overall_moving_average, handle)
-			pickle.dump(overall_reverse, handle)
-			pickle.dump(overall_difference, handle)"""
