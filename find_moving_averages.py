@@ -92,6 +92,7 @@ def find_averages(db_buy, db_sell):
 
 def test_averages(db_buy, db_sell, data):
 	overall_cash = 0
+	top = {}
 	for line in data:
 		test_ma = line['test_ma']
 		MA = line['name']
@@ -133,7 +134,11 @@ def test_averages(db_buy, db_sell, data):
 			overall_moving_average = test_ma
 			overall_reverse = reverse
 			overall_floor_difference = floor_diff
-	print (overall_cash, overall_formula, overall_moving_average, overall_cur, overall_reverse, overall_difference)
+		if CUR not in top:
+			top[CUR] = {'test_ma' : test_ma, 'MA' : MA, 'reverse' : reverse, 'floor_diff': floor_diff, 'cash' : cash}
+		elif top[CUR]['cash'] < cash:
+			top[CUR] = {'test_ma' : test_ma, 'MA' : MA, 'reverse' : reverse, 'floor_diff': floor_diff, 'cash' : cash}
+	print (overall_cash, overall_formula, overall_moving_average, overall_cur, overall_reverse, overall_floor_difference)
 	if overall_cash > 1000:
 		with open('moving-averages-5min', 'wb') as handle:
 			pickle.dump(overall_formula, handle)
@@ -141,6 +146,8 @@ def test_averages(db_buy, db_sell, data):
 			pickle.dump(overall_moving_average, handle)
 			pickle.dump(overall_reverse, handle)
 			pickle.dump(overall_floor_difference, handle)
+		with open('leftovers.txt', w) as json_file:  
+			data = json.dump(top, json_file)
 	else:
 		print ('Not profitable, no data written')
 
