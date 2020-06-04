@@ -49,7 +49,7 @@ def find_averages(db_buy, db_sell):
 					increments.append(diff)
 			inc = min(increments)
 			for reverse in [True, False]:
-				for test_ma in range(2, 72):
+				for test_ma in range(2, 20):
 					for floor_diff in range(1, 60):
 						cash = 1000.00
 						crypto = 0
