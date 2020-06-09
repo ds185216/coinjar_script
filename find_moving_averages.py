@@ -11,8 +11,13 @@ from averages_list import averages, averages_names, averages_dict
 
 print ("Grab a coffee, this may take a while...")
 
+short = ['BTCAUD', 'ETHAUD', 'XRPAUD', 'LTCAUD', 'ZECAUD']
+
 buy = pd.read_pickle('db_buy-5min')
 sell = pd.read_pickle('db_sell-5min')
+
+buy = buy[short]
+sell = sell[short]
 
 print ('Database size:', len(buy), 'entries')
 
@@ -150,7 +155,7 @@ def test_averages(db_buy, db_sell, data):
 			pickle.dump(overall_reverse, handle)
 			pickle.dump(overall_floor_difference, handle)
 			pickle.dump(overall_roof_difference, handle)
-		with open('leftovers.txt', w) as json_file:  
+		with open('leftovers.txt', 'w') as json_file:  
 			data = json.dump(top, json_file)
 	else:
 		print ('Not profitable, no data written')
