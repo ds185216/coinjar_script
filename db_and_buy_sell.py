@@ -68,10 +68,13 @@ def buy_sell_product(BUY_SELL, ID, PRICE, SIZE):
 							print("Transaction OK", BUY_SELL, ID, PRICE)
 							if BUY_SELL == 'buy':
 								highest_amount = float(PRICE)
+								last_buy = float(PRICE)
 							elif BUY_SELL == 'sell':
 								highest_amount = 0
 							with open('Roof', 'wb') as handle:
 								pickle.dump(highest_amount, handle)
+							with open('Last', 'wb') as handle:
+								pickle.dump(PRICE, handle)
 						else:
 							print("Some bogus error", r.reason)
 							print(values)
@@ -143,7 +146,8 @@ def write_daily(token_entry):
 			final_cur = pickle.load(handle)
 			final_ma = pickle.load(handle)
 			reverse = pickle.load(handle)
-			overall_difference = pickle.load(handle)
+			floor_difference = pickle.load(handle)
+			roof_difference = pickle.load(handle)
 			print (final_cur, db_buy[final_cur].tail(1).index[0], db_buy[final_cur][-1])
 	except:
 		print ('Please run find_moving_averages first!')
@@ -156,6 +160,12 @@ def write_daily(token_entry):
 	except:
 		highest_amount = 0
 
+	try:
+		with open('Last', 'rb') as handle:
+			last_buy = pickle.load(handle)
+	except:
+		last_buy = 0
+
 	buy_prices = [y for y in db_buy[final_cur]]
 	sell_prices = [y for y in db_sell[final_cur]]
 	accounts = json.loads(urlopen(Request('https://api.exchange.coinjar.com/accounts', headers=headers)).read().decode('utf-8'))
@@ -165,12 +175,12 @@ def write_daily(token_entry):
 		#Moving floor stop/ceiling stop
 		if float(sell_prices[-1]) > highest_amount:
 			highest_amount = float(sell_prices[-1])
-			print ('Floor set to ', highest_amount - overall_difference)
+			print ('Floor set to ', highest_amount - floor_difference)
 			with open('Roof', 'wb') as handle:
 				pickle.dump(highest_amount, handle)
 
 		#Sell part
-		if float(sell_prices[-1]) < (highest_amount - overall_difference):
+		if float(sell_prices[-1]) < (highest_amount - floor_difference) or float(sell_prices[-1]) >= (last_buy + roof_difference):
 			for X in range(len(accounts)):
 				if accounts[X]['asset_code'] != 'AUD' and accounts[X]['asset_code'] in final_cur:
 					ASSET = X
