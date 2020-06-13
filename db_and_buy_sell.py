@@ -28,7 +28,7 @@ def readsettings():
 	global minimum_periods, sell_stop, stop_percent, token
 	with open('cjsettings.txt') as json_file:  
 		data = json.load(json_file)[0]
-		minimum_periods = data['minimum_periods']
+		minimum_periods = int(data['minimum_periods'])
 		token = data['token']
 	if token == "":
 		print ('No token found')
@@ -90,7 +90,7 @@ def write_daily(token_entry):
 		products = json.loads(urlopen(Request('https://api.exchange.coinjar.com/products', headers=headers)).read().decode('utf-8'))
 		product_list = [i['id'] for i in products]
 	except:
-		db_buy = pd.read_pickle('db_buy-hourly')
+		db_buy = pd.read_pickle('db_buy-5min')
 		product_list = [x for x in db_buy]
 	
 	retries = 0
@@ -110,14 +110,14 @@ def write_daily(token_entry):
 			time.sleep(5)
 			retries +=1
 			if retries == 30:
-				db_buy = pd.read_pickle('db_buy-hourly')
-				db_sell = pd.read_pickle('db_sell-hourly')
+				db_buy = pd.read_pickle('db_buy-5min')
+				db_sell = pd.read_pickle('db_sell-5min')
 				buy_price = [x for x in db_buy.iloc[-1]]
 				sell_price = [x for x in db_sell.iloc[-1]]
 				success = True
 	try:
-		db_buy = pd.read_pickle('db_buy-hourly')
-		db_sell = pd.read_pickle('db_sell-hourly')
+		db_buy = pd.read_pickle('db_buy-5min')
+		db_sell = pd.read_pickle('db_sell-5min')
 
 		new_row = pd.DataFrame(buy_price).transpose()
 		new_row.columns = product_list
@@ -136,12 +136,12 @@ def write_daily(token_entry):
 		db_sell.columns = product_list
 		db_sell.rename(index={0 : str(datetime.datetime.now())}, inplace=True)
 
-	db_buy.to_pickle('db_buy-hourly')
-	db_sell.to_pickle('db_sell-hourly')
+	db_buy.to_pickle('db_buy-5min')
+	db_sell.to_pickle('db_sell-5min')
 
 #buy sell part
 	try:
-		with open('moving-averages-hourly', 'rb') as handle:
+		with open('moving-averages-5min', 'rb') as handle:
 			final_formula = pickle.load(handle)
 			final_cur = pickle.load(handle)
 			final_ma = pickle.load(handle)
@@ -170,8 +170,7 @@ def write_daily(token_entry):
 	sell_prices = [y for y in db_sell[final_cur]]
 	accounts = json.loads(urlopen(Request('https://api.exchange.coinjar.com/accounts', headers=headers)).read().decode('utf-8'))
 	today = False
-	if len(db_buy) > minimum_periods:
-		
+	if len(buy_prices) > minimum_periods:
 		#Moving floor stop/ceiling stop
 		if float(sell_prices[-1]) > highest_amount:
 			highest_amount = float(sell_prices[-1])
@@ -190,7 +189,7 @@ def write_daily(token_entry):
 				
 		#Buy part
 		if today != True:
-			average = averages_dict[final_formula](test_ma, buy_prices[(i-(test_ma+int(math.sqrt(test_ma)))):i])
+			average = averages_dict[final_formula](final_ma, buy_prices[-(final_ma+int(math.sqrt(final_ma))):])
 			if average < float(buy_prices[-1]) or reverse == True and average > float(buy_prices[-1]):
 				if float(accounts[0]['available']) > 0:
 					buy_sell_product("buy", final_cur, round(float(buy_prices[-1]), 2), (float(accounts[0]['available'])/float(buy_prices[-1])))
