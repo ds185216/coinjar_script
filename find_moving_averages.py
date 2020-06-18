@@ -74,7 +74,7 @@ def find_averages(db_buy, db_sell):
 									if (float(sell_prices[i]) < highest_amount - (floor_diff * inc) or float(sell_prices[i]) >= ((roof_diff * inc) + buy_amount)) and cash == 0:
 										#test sell
 										pre_cash = round(crypto * float(sell_prices[i]))
-										pre_cash = pre_cash - (pre_cash*0.0022) #Deduct fees
+										pre_cash = pre_cash - round(pre_cash*0.0022) #Deduct fees
 										cash = cash + pre_cash
 										crypto= 0
 										today = True
@@ -84,7 +84,7 @@ def find_averages(db_buy, db_sell):
 									average = averages[calc](test_ma, buy_prices[(i-(test_ma+int(math.sqrt(test_ma)))):i])
 									if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]) and crypto == 0:
 										#test buy
-										fee = cash - (cash*0.0033) #Deduct fees
+										fee = cash - round(cash*0.0033) #Deduct fees
 										crypto = crypto + (round(cash) / float(buy_prices[i]))
 										cash = 0
 										cash = cash - fee
@@ -129,7 +129,7 @@ def test_averages(db_buy, db_sell, data):
 				if (float(sell_prices[i]) < highest_amount - (floor_diff) or float(sell_prices[i]) >= (roof_diff + buy_amount)) and cash == 0:
 					#test sell
 					pre_cash = round(crypto * float(sell_prices[i]))
-					pre_cash = pre_cash - (pre_cash*0.0022) #Deduct fees
+					pre_cash = pre_cash - round(pre_cash*0.0022) #Deduct fees
 					cash = cash + pre_cash
 					crypto= 0
 					today = True
@@ -138,7 +138,7 @@ def test_averages(db_buy, db_sell, data):
 				average = averages_dict[MA](test_ma, buy_prices[(i-(test_ma+int(math.sqrt(test_ma)))):i])
 				if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]) and crypto == 0:
 					#test buy
-					fee = cash - (cash*0.0033) #Deduct fees
+					fee = cash - round(cash*0.0033) #Deduct fees
 					crypto = crypto + (round(cash) / float(buy_prices[i]))
 					cash = 0
 					cash = cash - fee
