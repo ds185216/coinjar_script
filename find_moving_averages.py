@@ -9,15 +9,19 @@ import math
 
 from averages_list import averages, averages_names, averages_dict
 
+#Multiprocessing
+#change imports to classes
+
+
 print ("Grab a coffee, this may take a while...")
 
-short = ['BTCAUD', 'ETHAUD', 'XRPAUD', 'LTCAUD', 'ZECAUD']
+#short = ['BTCAUD', 'ETHAUD', 'XRPAUD', 'LTCAUD', 'ZECAUD']
 
 buy = pd.read_pickle('db_buy-5min')
 sell = pd.read_pickle('db_sell-5min')
 
-buy = buy[short]
-sell = sell[short]
+#buy = buy[short]
+#sell = sell[short]
 
 print ('Database size:', len(buy), 'entries')
 
@@ -69,7 +73,9 @@ def find_averages(db_buy, db_sell):
 								if crypto > 0:
 									if (float(sell_prices[i]) < highest_amount - (floor_diff * inc) or float(sell_prices[i]) >= ((roof_diff * inc) + buy_amount)) and cash == 0:
 										#test sell
-										cash = cash + round(crypto * float(sell_prices[i]))
+										pre_cash = round(crypto * float(sell_prices[i]))
+										pre_cash = pre_cash - (pre_cash*0.0022) #Deduct fees
+										cash = cash + pre_cash
 										crypto= 0
 										today = True
 										highest_amount = 0
@@ -78,8 +84,10 @@ def find_averages(db_buy, db_sell):
 									average = averages[calc](test_ma, buy_prices[(i-(test_ma+int(math.sqrt(test_ma)))):i])
 									if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]) and crypto == 0:
 										#test buy
+										fee = cash - (cash*0.0033) #Deduct fees
 										crypto = crypto + (round(cash) / float(buy_prices[i]))
 										cash = 0
+										cash = cash - fee
 										highest_amount = float(buy_prices[i])
 										buy_amount = float(buy_prices[i])
 										shift +=1
@@ -120,7 +128,9 @@ def test_averages(db_buy, db_sell, data):
 			if crypto > 0:
 				if (float(sell_prices[i]) < highest_amount - (floor_diff) or float(sell_prices[i]) >= (roof_diff + buy_amount)) and cash == 0:
 					#test sell
-					cash = cash + round(crypto * float(sell_prices[i]))
+					pre_cash = round(crypto * float(sell_prices[i]))
+					pre_cash = pre_cash - (pre_cash*0.0022) #Deduct fees
+					cash = cash + pre_cash
 					crypto= 0
 					today = True
 					highest_amount = 0
@@ -128,8 +138,10 @@ def test_averages(db_buy, db_sell, data):
 				average = averages_dict[MA](test_ma, buy_prices[(i-(test_ma+int(math.sqrt(test_ma)))):i])
 				if average < float(buy_prices[i]) or reverse == True and average > float(buy_prices[i]) and crypto == 0:
 					#test buy
+					fee = cash - (cash*0.0033) #Deduct fees
 					crypto = crypto + (round(cash) / float(buy_prices[i]))
 					cash = 0
+					cash = cash - fee
 					highest_amount = float(buy_prices[i])
 					buy_amount = float(buy_prices[i])
 		if crypto != 0:
